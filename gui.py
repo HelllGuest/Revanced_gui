@@ -54,6 +54,11 @@ class ReVancedGUI:
         self.java_version = tk.StringVar(value="Checking...")
         self.system_status = tk.StringVar(value="Checking system...")
         
+        # Patch selection
+        self.selected_patches = []  # List of selected patch names
+        self.available_patches = []  # List of all available patches
+        self.use_all_patches = tk.BooleanVar(value=True)  # Use all patches by default
+        
         # Configuration
         self.config_file = Path.home() / ".revanced_gui_config.json"
         self.recent_files_file = Path.home() / ".revanced_gui_recent.json"
@@ -501,43 +506,75 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         ttk.Button(main_frame, text="Browse", command=self.browse_patches).grid(row=3, column=2, padx=5, pady=8)
         self.create_tooltip(self.patches_entry, "Select the ReVanced patches RVP file")
         
+        # Patch selection options
+        patch_frame = ttk.LabelFrame(main_frame, text="Patch Selection", padding="10")
+        patch_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=8)
+        patch_frame.columnconfigure(1, weight=1)
+        
+        # Use all patches option
+        self.use_all_checkbox = ttk.Checkbutton(patch_frame, text="Use all patches", 
+                                               variable=self.use_all_patches,
+                                               command=self.toggle_patch_selection)
+        self.use_all_checkbox.grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=5)
+        
+        # Select specific patches option
+        self.select_specific_patches = tk.BooleanVar(value=False)
+        self.select_patches_checkbox = ttk.Checkbutton(patch_frame, text="Select specific patches", 
+                                                      variable=self.select_specific_patches,
+                                                      command=self.toggle_patch_selection)
+        self.select_patches_checkbox.grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=5)
+        
+        # Patch selection button
+        self.patch_selection_btn = ttk.Button(patch_frame, text="Select Patches", 
+                                             command=self.show_patch_selection_dialog,
+                                             state=tk.DISABLED)
+        self.patch_selection_btn.grid(row=2, column=0, sticky=tk.W, pady=5)
+        
+        # Selected patches count label
+        self.selected_patches_label = ttk.Label(patch_frame, text="No patches selected", 
+                                               foreground="gray")
+        self.selected_patches_label.grid(row=2, column=1, sticky=tk.W, padx=(10, 0), pady=5)
+        
+        # Bind patches path change to load patches
+        self.patches_rvp_path.trace_add('write', self.on_patches_path_changed)
+        
         # APK file selection
-        ttk.Label(main_frame, text="APK File:").grid(row=4, column=0, sticky=tk.W, pady=8)
+        ttk.Label(main_frame, text="APK File:").grid(row=5, column=0, sticky=tk.W, pady=8)
         self.apk_entry = ttk.Entry(main_frame, textvariable=self.apk_path)
-        self.apk_entry.grid(row=4, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
-        ttk.Button(main_frame, text="Browse", command=self.browse_apk).grid(row=4, column=2, padx=5, pady=8)
+        self.apk_entry.grid(row=5, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
+        ttk.Button(main_frame, text="Browse", command=self.browse_apk).grid(row=5, column=2, padx=5, pady=8)
         self.create_tooltip(self.apk_entry, "Select the APK file to patch")
         # Bind the APK path change to update output filename
         self.apk_path.trace_add('write', self.update_output_filename)
         
         
         # Output directory
-        ttk.Label(main_frame, text="Output Directory:").grid(row=5, column=0, sticky=tk.W, pady=8)
+        ttk.Label(main_frame, text="Output Directory:").grid(row=6, column=0, sticky=tk.W, pady=8)
         output_entry = ttk.Entry(main_frame, textvariable=self.output_path)
-        output_entry.grid(row=5, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
-        ttk.Button(main_frame, text="Browse", command=self.browse_output).grid(row=5, column=2, padx=5, pady=8)
+        output_entry.grid(row=6, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
+        ttk.Button(main_frame, text="Browse", command=self.browse_output).grid(row=6, column=2, padx=5, pady=8)
         self.create_tooltip(output_entry, "Select where to save the patched APK")
         
         # Output filename
-        ttk.Label(main_frame, text="Output Filename:").grid(row=6, column=0, sticky=tk.W, pady=8)
+        ttk.Label(main_frame, text="Output Filename:").grid(row=7, column=0, sticky=tk.W, pady=8)
         self.output_filename_entry = ttk.Entry(main_frame, textvariable=self.output_filename)
-        self.output_filename_entry.grid(row=6, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
+        self.output_filename_entry.grid(row=7, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         self.create_tooltip(self.output_filename_entry, "Automatically generated with '-patched' suffix")
         
         # Progress area
-        ttk.Label(main_frame, text="Progress:").grid(row=7, column=0, sticky=tk.W, pady=(20, 5))
+        ttk.Label(main_frame, text="Progress:").grid(row=8, column=0, sticky=tk.W, pady=(20, 5))
         
         # Progress bar
         self.progress_bar = ttk.Progressbar(main_frame, mode='indeterminate')
-        self.progress_bar.grid(row=7, column=1, sticky=(tk.W, tk.E), pady=(20, 5), padx=5)
+        self.progress_bar.grid(row=8, column=1, sticky=(tk.W, tk.E), pady=(20, 5), padx=5)
         
         # Status label
         self.status_label = ttk.Label(main_frame, text="Ready", foreground="green")
-        self.status_label.grid(row=7, column=2, sticky=tk.W, pady=(20, 5))
+        self.status_label.grid(row=8, column=2, sticky=tk.W, pady=(20, 5))
         
         # Progress frame with text and scrollbar
         progress_frame = ttk.Frame(main_frame)
-        progress_frame.grid(row=8, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=8)
+        progress_frame.grid(row=9, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=8)
         progress_frame.columnconfigure(0, weight=1)
         progress_frame.rowconfigure(0, weight=1)
         
@@ -551,7 +588,7 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         
         # Buttons frame
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=9, column=0, columnspan=3, pady=20)
+        button_frame.grid(row=10, column=0, columnspan=3, pady=20)
         
         ttk.Button(button_frame, text="Patch APK", command=self.patch_apk).pack(side=tk.LEFT, padx=8)
         ttk.Button(button_frame, text="Clear Log", command=self.clear_log).pack(side=tk.LEFT, padx=8)
@@ -559,7 +596,7 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         ttk.Button(button_frame, text="Exit", command=self.root.quit).pack(side=tk.LEFT, padx=8)
         
         # Configure row weights for proper resizing
-        main_frame.rowconfigure(8, weight=1)
+        main_frame.rowconfigure(9, weight=1)
         
         # Set initial focus
         self.cli_entry.focus()
@@ -697,6 +734,10 @@ For more help, visit: https://github.com/revanced/revanced-documentation
                 self.patches_rvp_path.set(str(config.get('last_patches_path', '')))
                 self.output_path.set(str(config.get('last_output_dir', '')))
                 
+                # Load patch selection settings
+                self.use_all_patches.set(config.get('use_all_patches', True))
+                self.selected_patches = config.get('selected_patches', [])
+                
                 # Validate geometry string
                 geometry = config.get('window_geometry', '')
                 if geometry and re.match(r'\d+x\d+\+\d+\+\d+', geometry):
@@ -721,7 +762,9 @@ For more help, visit: https://github.com/revanced/revanced-documentation
                 'last_patches_path': self.patches_rvp_path.get(),
                 'last_output_dir': self.output_path.get(),
                 'window_geometry': self.root.geometry(),
-                'version': __version__
+                'version': __version__,
+                'use_all_patches': self.use_all_patches.get(),
+                'selected_patches': self.selected_patches
             }
             
             # Write atomically
@@ -1220,12 +1263,33 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             self.apk_path.get()
         ]
         
+        # Add selected patches if not using all patches
+        if not self.use_all_patches.get() and self.selected_patches:
+            # When using specific patches, we need to exclude all others
+            # First, get all available patches
+            all_patches = set(self.available_patches)
+            selected_patches_set = set(self.selected_patches)
+            excluded_patches = all_patches - selected_patches_set
+            
+            # Add exclude flags for patches not selected
+            for patch in excluded_patches:
+                cmd.extend(["-e", patch])
+        
         self.log_message("=" * 60)
         self.log_message("Starting ReVanced Patching Process")
         self.log_message("=" * 60)
         self.log_message(f"Input APK: {self.apk_path.get()}")
         self.log_message(f"Output file: {output_file}")
         self.log_message(f"Java version: {self.java_version.get()}")
+        
+        # Log patch selection info
+        if self.use_all_patches.get():
+            self.log_message("Using all available patches")
+        else:
+            self.log_message(f"Using {len(self.selected_patches)} selected patches:")
+            for patch in self.selected_patches:
+                self.log_message(f"  - {patch}")
+        
         self.log_message(f"Command: {' '.join(cmd)}")
         self.log_message("-" * 60)
         
@@ -1315,6 +1379,230 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         if len(modified) > 1 and modified[0] == 'java':
             modified.insert(1, '-Xmx2G')  # Add more memory
         return modified
+    
+    def on_patches_path_changed(self, *args):
+        """Handle patches file path change"""
+        patches_path = self.patches_rvp_path.get()
+        if patches_path and os.path.exists(patches_path):
+            # Load available patches when patches file is selected
+            self.load_available_patches()
+    
+    def load_available_patches(self):
+        """Load available patches from the patches file"""
+        if not self.cli_jar_path.get() or not self.patches_rvp_path.get():
+            return
+            
+        try:
+            # Run command to list patches
+            cmd = [
+                "java", "-jar", 
+                self.cli_jar_path.get(), 
+                "list-patches", 
+                "-d", 
+                "-o", self.patches_rvp_path.get()
+            ]
+            
+            self.log_message("Loading available patches...")
+            
+            # Run in separate thread to avoid blocking UI
+            thread = threading.Thread(target=self._load_patches_thread, args=(cmd,))
+            thread.daemon = True
+            thread.start()
+            
+        except Exception as e:
+            self.log_message(f"Error loading patches: {e}")
+    
+    def _load_patches_thread(self, cmd):
+        """Thread function to load patches"""
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result.returncode == 0:
+                # Parse patches from output
+                patches = self.parse_patches_output(result.stdout)
+                self.root.after(0, self._on_patches_loaded, patches)
+            else:
+                error_msg = f"Failed to load patches: {result.stderr}"
+                self.root.after(0, self._on_patches_load_error, error_msg)
+                
+        except subprocess.TimeoutExpired:
+            self.root.after(0, self._on_patches_load_error, "Timeout loading patches")
+        except Exception as e:
+            self.root.after(0, self._on_patches_load_error, f"Error: {str(e)}")
+    
+    def parse_patches_output(self, output):
+        """Parse patches from CLI output"""
+        patches = []
+        lines = output.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith('Loading') and not line.startswith('Found'):
+                # Extract patch name (usually the first word or quoted string)
+                if '"' in line:
+                    # Handle quoted patch names
+                    start = line.find('"') + 1
+                    end = line.find('"', start)
+                    if end > start:
+                        patch_name = line[start:end]
+                        patches.append(patch_name)
+                elif line and not line.startswith('-') and not line.startswith('='):
+                    # Handle unquoted patch names
+                    parts = line.split()
+                    if parts:
+                        patch_name = parts[0]
+                        if patch_name not in ['Loading', 'Found', 'Patches:']:
+                            patches.append(patch_name)
+        
+        return patches
+    
+    def _on_patches_loaded(self, patches):
+        """Handle successful patch loading"""
+        self.available_patches = patches
+        self.log_message(f"Loaded {len(patches)} available patches")
+        
+        # Enable patch selection if we have patches
+        if patches:
+            self.patch_selection_btn.config(state=tk.NORMAL)
+            self.update_selected_patches_label()
+    
+    def _on_patches_load_error(self, error_msg):
+        """Handle patch loading error"""
+        self.log_message(error_msg)
+        self.available_patches = []
+        self.patch_selection_btn.config(state=tk.DISABLED)
+        self.selected_patches_label.config(text="Failed to load patches", foreground="red")
+    
+    def toggle_patch_selection(self):
+        """Toggle between use all patches and select specific patches"""
+        if self.use_all_patches.get():
+            self.select_specific_patches.set(False)
+            self.patch_selection_btn.config(state=tk.DISABLED)
+            self.selected_patches_label.config(text="Using all patches", foreground="green")
+        else:
+            self.select_specific_patches.set(True)
+            if self.available_patches:
+                self.patch_selection_btn.config(state=tk.NORMAL)
+            self.update_selected_patches_label()
+    
+    def show_patch_selection_dialog(self):
+        """Show dialog to select specific patches"""
+        if not self.available_patches:
+            messagebox.showwarning("No Patches", "No patches available. Please select a valid patches file first.")
+            return
+        
+        # Create patch selection window
+        patch_window = tk.Toplevel(self.root)
+        patch_window.title("Select Patches")
+        patch_window.geometry("600x500")
+        patch_window.resizable(True, True)
+        patch_window.transient(self.root)
+        patch_window.grab_set()
+        
+        # Center the window
+        patch_window.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() - patch_window.winfo_width()) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - patch_window.winfo_height()) // 2
+        patch_window.geometry(f"+{x}+{y}")
+        
+        # Main frame
+        main_frame = ttk.Frame(patch_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        ttk.Label(main_frame, text="Select Patches to Apply", 
+                 font=("Arial", 14, "bold")).pack(pady=(0, 10))
+        
+        # Search frame
+        search_frame = ttk.Frame(main_frame)
+        search_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var)
+        search_entry.pack(side=tk.LEFT, padx=(5, 0), fill=tk.X, expand=True)
+        search_var.trace_add('write', lambda *args: self.filter_patches(search_var.get()))
+        
+        # Patches list frame
+        list_frame = ttk.Frame(main_frame)
+        list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        
+        # Create listbox with scrollbar
+        listbox_frame = ttk.Frame(list_frame)
+        listbox_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.patches_listbox = tk.Listbox(listbox_frame, selectmode=tk.MULTIPLE, font=("Consolas", 10))
+        scrollbar = ttk.Scrollbar(listbox_frame, orient=tk.VERTICAL, command=self.patches_listbox.yview)
+        self.patches_listbox.configure(yscrollcommand=scrollbar.set)
+        
+        self.patches_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Populate listbox
+        self.filtered_patches = self.available_patches.copy()
+        for patch in self.filtered_patches:
+            self.patches_listbox.insert(tk.END, patch)
+        
+        # Select previously selected patches
+        for i, patch in enumerate(self.filtered_patches):
+            if patch in self.selected_patches:
+                self.patches_listbox.selection_set(i)
+        
+        # Buttons frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        ttk.Button(button_frame, text="Select All", 
+                  command=lambda: self.patches_listbox.selection_set(0, tk.END)).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="Select None", 
+                  command=lambda: self.patches_listbox.selection_clear(0, tk.END)).pack(side=tk.LEFT, padx=(0, 5))
+        
+        ttk.Button(button_frame, text="Cancel", 
+                  command=patch_window.destroy).pack(side=tk.RIGHT, padx=(5, 0))
+        ttk.Button(button_frame, text="Apply", 
+                  command=lambda: self.apply_patch_selection(patch_window)).pack(side=tk.RIGHT)
+        
+        # Store reference for filtering
+        self.patch_window = patch_window
+        self.search_var = search_var
+    
+    def filter_patches(self, search_text):
+        """Filter patches based on search text"""
+        if not hasattr(self, 'patches_listbox'):
+            return
+        
+        self.patches_listbox.delete(0, tk.END)
+        
+        if search_text:
+            self.filtered_patches = [patch for patch in self.available_patches 
+                                   if search_text.lower() in patch.lower()]
+        else:
+            self.filtered_patches = self.available_patches.copy()
+        
+        for patch in self.filtered_patches:
+            self.patches_listbox.insert(tk.END, patch)
+    
+    def apply_patch_selection(self, window):
+        """Apply selected patches"""
+        selected_indices = self.patches_listbox.curselection()
+        self.selected_patches = [self.filtered_patches[i] for i in selected_indices]
+        
+        self.update_selected_patches_label()
+        self.use_all_patches.set(False)
+        self.select_specific_patches.set(True)
+        
+        window.destroy()
+        self.log_message(f"Selected {len(self.selected_patches)} patches")
+    
+    def update_selected_patches_label(self):
+        """Update the selected patches count label"""
+        if self.use_all_patches.get():
+            self.selected_patches_label.config(text="Using all patches", foreground="green")
+        elif self.selected_patches:
+            count = len(self.selected_patches)
+            self.selected_patches_label.config(text=f"{count} patches selected", foreground="blue")
+        else:
+            self.selected_patches_label.config(text="No patches selected", foreground="gray")
 
 def main():
     # Create root window with drag & drop support if available

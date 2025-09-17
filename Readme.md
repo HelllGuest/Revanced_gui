@@ -18,6 +18,7 @@ A cross-platform graphical user interface for the ReVanced CLI patching tool, ma
 - **Recent Files**: Quick access to recently used files
 - **Error Handling**: Comprehensive validation and error reporting with auto-retry
 - **APK Analysis**: Built-in APK and patches file analysis tools
+- **Patch Selection**: Choose specific patches to apply instead of using all patches
 - **Keyboard Shortcuts**: Full keyboard navigation support
 
 ## Prerequisites
@@ -111,15 +112,22 @@ Download the latest ReVanced files from:
    - Click "Browse" next to "Output Directory"
    - Select where you want to save the patched APK
 
-6. **Review Output Filename**:
+6. **Configure Patch Selection** (Optional):
+   - Choose "Use all patches" for default behavior
+   - Or select "Select specific patches" to choose which patches to apply
+   - Click "Select Patches" to open the patch selection dialog
+   - Use the search function to find specific patches
+   - Select/deselect patches as needed
+
+7. **Review Output Filename**:
    - The application automatically suggests a filename with "-patched" suffix
    - You can modify this if desired
 
-7. **Start Patching**:
+8. **Start Patching**:
    - Click "Patch APK" to begin the patching process
    - Monitor progress in the log area with real-time updates
 
-8. **Completion**:
+9. **Completion**:
    - When finished, you'll see a success message
    - The patched APK will be saved in your chosen output directory
 
@@ -130,6 +138,7 @@ Download the latest ReVanced files from:
 - **Recent Files**: Access recently used files from the File menu
 - **System Validation**: Use "Validate Setup" to check system requirements
 - **APK Analysis**: Analyze APK files before patching (View → Analyze APK)
+- **Patch Selection**: Choose specific patches to apply with search and filtering
 - **Keyboard Shortcuts**: 
   - `Ctrl+O`: Open APK file
   - `Ctrl+P`: Start patching
@@ -208,6 +217,7 @@ The application provides detailed logs in the progress area:
 - **Workflow Enhancement**: Profile management and recent files for better productivity
 - **Error Recovery**: Auto-retry mechanism for failed operations
 - **Analysis Tools**: Built-in APK and patches file analysis
+- **Patch Selection**: Advanced patch selection with search and filtering capabilities
 
 ## Project Structure
 
@@ -302,6 +312,8 @@ If you encounter any issues:
   - Improved error handling and reporting
   - System validation and resource monitoring
   - Code optimization and dead code removal
+  - Advanced patch selection with search and filtering
+  - Patch management and configuration persistence
 
 - **v1.0.0** (Previous)
   - Initial release
