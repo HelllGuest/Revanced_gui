@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, simpledialog
 import subprocess
 import threading
 import os
@@ -481,10 +481,6 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         ttk.Label(status_frame, text="Java:").pack(side=tk.LEFT, padx=(20, 0))
         ttk.Label(status_frame, textvariable=self.java_version).pack(side=tk.LEFT, padx=(5, 0))
         
-        # Title
-        title_label = ttk.Label(main_frame, text="ReVanced Patcher", 
-                               font=("Arial", 18, "bold"))
-        title_label.grid(row=1, column=0, columnspan=3, pady=(0, 20))
         
         # CLI JAR file selection
         ttk.Label(main_frame, text="ReVanced CLI JAR:").grid(row=2, column=0, sticky=tk.W, pady=8)
