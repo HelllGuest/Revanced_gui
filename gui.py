@@ -907,7 +907,7 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             },
             'files': {
                 'cli_jar': os.path.basename(self.cli_jar_path.get()) if self.cli_jar_path.get() else None,
-                'patches': os.path basename(self.patches_rvp_path.get()) if self.patches_rvp_path.get() else None,
+                'patches': os.path.basename(self.patches_rvp_path.get()) if self.patches_rvp_path.get() else None,
                 'apk': os.path.basename(self.apk_path.get()) if self.apk_path.get() else None
             },
             'error': error_details
