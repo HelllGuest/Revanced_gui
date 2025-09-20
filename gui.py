@@ -22,7 +22,6 @@ try:
 except ImportError:
     PSUTIL_AVAILABLE = False
 
-# Try to import drag & drop support
 try:
     from tkinterdnd2 import TkinterDnD, DND_FILES
     DND_AVAILABLE = True
@@ -37,12 +36,11 @@ class ReVancedGUI:
         self.root.minsize(900, 500)
         self.root.resizable(True, True)
         
-        # Check dependencies before initializing
         if not self.check_dependencies():
             root.quit()
             return
             
-        # Variables
+        # Core variables
         self.cli_jar_path = tk.StringVar()
         self.patches_rvp_path = tk.StringVar()
         self.apk_path = tk.StringVar()
@@ -51,68 +49,43 @@ class ReVancedGUI:
         self.java_version = tk.StringVar(value="Checking...")
         self.system_status = tk.StringVar(value="Checking system...")
         
-        # Configuration options
-        self.save_logs_enabled = False  # Default: don't save logs
-        self.save_config_enabled = True  # Default: save configuration
+        # Configuration
+        self.save_logs_enabled = False
+        self.save_config_enabled = True
         
-        # Get script directory
         try:
             self.script_dir = Path(__file__).parent.resolve()
         except (NameError, AttributeError):
-            # Fallback to current working directory if __file__ is not available
             self.script_dir = Path.cwd()
         
-        # Configuration file path (in script directory)
         self.config_file = self.script_dir / "config.json"
-        
-        # Monitoring
         self.monitoring = False
-        
-        # Retry mechanism
-        self.retry_count = 0
-        self.max_retries = 3
         
         self.setup_logging()
         self.create_menu()
         self.setup_ui()
         
-        # Bind events for dynamic scaling
         self.root.bind('<Configure>', self.on_window_resize)
         
-        # Setup drag & drop if available
         if DND_AVAILABLE:
             self.setup_drag_drop()
         
-        # Check system requirements
         self.root.after(100, self.validate_system_requirements)
-        
-        # Start system monitoring
         self.start_system_monitor()
         
     def check_dependencies(self):
-        """Check and handle missing dependencies"""
-        missing_deps = []
-        
         if not PSUTIL_AVAILABLE:
-            missing_deps.append("psutil")
-        
-        if missing_deps:
-            dep_list = ", ".join(missing_deps)
-            error_msg = f"Missing recommended packages: {dep_list}\n\nInstall with: pip install {' '.join(missing_deps)}\n\nContinue without advanced features?"
-            if not messagebox.askyesno("Optional Dependencies", error_msg):
+            if not messagebox.askyesno("Optional Dependencies", 
+                "Missing recommended package: psutil\n\nInstall with: pip install psutil\n\nContinue without advanced features?"):
                 return False
-        
         return True
         
     def setup_logging(self):
-        """Configure logging to file"""
-        handlers = [logging.StreamHandler()]  # Always log to console
+        handlers = [logging.StreamHandler()]
         
         if self.save_logs_enabled:
-            # Create logs directory in script directory
             log_dir = self.script_dir / "logs"
             log_dir.mkdir(exist_ok=True)
-            
             log_file = log_dir / f"revanced_gui_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
             handlers.append(logging.FileHandler(log_file))
         
@@ -123,16 +96,14 @@ class ReVancedGUI:
         )
         
         if self.save_logs_enabled:
-            logging.info(f"ReVanced GUI v{__version__} started - Logs saved to: {log_dir}")
+            logging.info(f"ReVanced GUI v{__version__} started - Logs saved")
         else:
-            logging.info(f"ReVanced GUI v{__version__} started - Logging to console only")
+            logging.info(f"ReVanced GUI v{__version__} started - Console only")
         
     def create_menu(self):
-        # Create a menu bar
         self.menubar = tk.Menu(self.root)
         self.root.config(menu=self.menubar)
         
-        # Create File menu
         file_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Clear Log", command=self.clear_log)
@@ -141,28 +112,16 @@ class ReVancedGUI:
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
         
-
-        
-
-        
-
-        
-
-        
     def setup_drag_drop(self):
-        """Enable drag and drop for file inputs"""
         if DND_AVAILABLE:
-            # Register as drop target
             self.root.drop_target_register(DND_FILES)
             self.root.dnd_bind('<<Drop>>', self.handle_drop)
             
-            # Make entry widgets accept drops
             for widget in [self.cli_entry, self.patches_entry, self.apk_entry]:
                 widget.drop_target_register(DND_FILES)
                 widget.dnd_bind('<<Drop>>', self.handle_drop)
 
     def handle_drop(self, event):
-        """Handle dropped files for drag & drop support"""
         try:
             files = self.root.tk.splitlist(event.data)
             if files:
@@ -178,22 +137,13 @@ class ReVancedGUI:
         except Exception as e:
             self.log_message(f"Drag & drop error: {e}")
 
-
-    
-
-            
     def get_disk_usage(self, path=None):
-        """Get disk usage for specific path, cross-platform compatible"""
         if not PSUTIL_AVAILABLE:
             return 0, 0
             
         try:
-            if path and os.path.exists(path):
-                check_path = path
-            else:
-                check_path = os.getcwd()
+            check_path = path if path and os.path.exists(path) else os.getcwd()
             
-            # On Windows, ensure we check the drive root
             if os.name == 'nt':
                 drive = os.path.splitdrive(check_path)[0]
                 if drive:
@@ -205,45 +155,29 @@ class ReVancedGUI:
             self.log_message(f"Warning: Could not check disk usage: {e}")
             return 0, 0
 
-
-    
-
-
     def update_preferences(self):
-        """Update preferences when checkboxes change"""
         self.save_logs_enabled = self.logs_var.get()
         self.save_config_enabled = self.config_var.get()
         
-        # Save preferences to config if config saving is enabled
         if self.save_config_enabled:
             self.save_config()
         
         self.log_message(f"Settings updated - Logs: {'ON' if self.save_logs_enabled else 'OFF'}, Config: {'ON' if self.save_config_enabled else 'OFF'}")
 
-
-
-  
-  
-
-    
-
-        
     def setup_ui(self):
-        # Configure grid weights for dynamic scaling
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         
-        # Main frame
         main_frame = ttk.Frame(self.root, padding="15")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         main_frame.columnconfigure(1, weight=1)
         
-        # Status bar with settings and buttons
+        # Status bar with buttons and settings
         status_frame = ttk.Frame(main_frame)
         status_frame.grid(row=0, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 15))
-        status_frame.columnconfigure(1, weight=1)  # Make middle column expandable
+        status_frame.columnconfigure(1, weight=1)
         
-        # Left side - System status
+        # System status
         status_left = ttk.Frame(status_frame)
         status_left.grid(row=0, column=0, sticky=tk.W)
         
@@ -252,7 +186,7 @@ class ReVancedGUI:
         ttk.Label(status_left, text="Java:").pack(side=tk.LEFT, padx=(20, 0))
         ttk.Label(status_left, textvariable=self.java_version).pack(side=tk.LEFT, padx=(5, 0))
         
-        # Middle - Action buttons
+        # Action buttons
         status_middle = ttk.Frame(status_frame)
         status_middle.grid(row=0, column=1, sticky=tk.N)
         
@@ -260,80 +194,52 @@ class ReVancedGUI:
         ttk.Button(status_middle, text="Clear Log", command=self.clear_log).pack(side=tk.LEFT, padx=3)
         ttk.Button(status_middle, text="Exit", command=self.root.quit).pack(side=tk.LEFT, padx=3)
         
-        # Right side - Settings
+        # Settings
         status_right = ttk.Frame(status_frame)
         status_right.grid(row=0, column=2, sticky=tk.E)
         
-        # Create variables for checkboxes
         self.logs_var = tk.BooleanVar(value=self.save_logs_enabled)
         self.config_var = tk.BooleanVar(value=self.save_config_enabled)
         
-        # Settings label
         ttk.Label(status_right, text="Settings:", font=("Arial", 9)).pack(side=tk.LEFT, padx=(0, 5))
         
-        # Save logs checkbox (compact)
-        logs_check = ttk.Checkbutton(
-            status_right, 
-            text="Logs", 
-            variable=self.logs_var,
-            command=self.update_preferences
-        )
-        logs_check.pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Checkbutton(status_right, text="Logs", variable=self.logs_var, command=self.update_preferences).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Checkbutton(status_right, text="Config", variable=self.config_var, command=self.update_preferences).pack(side=tk.LEFT, padx=(0, 10))
         
-        # Save config checkbox (compact)
-        config_check = ttk.Checkbutton(
-            status_right, 
-            text="Config", 
-            variable=self.config_var,
-            command=self.update_preferences
-        )
-        config_check.pack(side=tk.LEFT, padx=(0, 10))
-        
-
-        
-        # CLI JAR file selection
+        # File inputs
         ttk.Label(main_frame, text="ReVanced CLI JAR:").grid(row=2, column=0, sticky=tk.W, pady=8)
         self.cli_entry = ttk.Entry(main_frame, textvariable=self.cli_jar_path)
         self.cli_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         ttk.Button(main_frame, text="Browse", command=self.browse_cli_jar).grid(row=2, column=2, padx=5, pady=8)
         
-        # Patches file selection
         ttk.Label(main_frame, text="Patches RVP:").grid(row=3, column=0, sticky=tk.W, pady=8)
         self.patches_entry = ttk.Entry(main_frame, textvariable=self.patches_rvp_path)
         self.patches_entry.grid(row=3, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         ttk.Button(main_frame, text="Browse", command=self.browse_patches).grid(row=3, column=2, padx=5, pady=8)
         
-        # APK file selection
         ttk.Label(main_frame, text="APK File:").grid(row=4, column=0, sticky=tk.W, pady=8)
         self.apk_entry = ttk.Entry(main_frame, textvariable=self.apk_path)
         self.apk_entry.grid(row=4, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         ttk.Button(main_frame, text="Browse", command=self.browse_apk).grid(row=4, column=2, padx=5, pady=8)
-        # Bind the APK path change to update output filename
         self.apk_path.trace_add('write', self.update_output_filename)
         
-        # Output directory
         ttk.Label(main_frame, text="Output Directory:").grid(row=5, column=0, sticky=tk.W, pady=8)
-        output_entry = ttk.Entry(main_frame, textvariable=self.output_path)
-        output_entry.grid(row=5, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
+        ttk.Entry(main_frame, textvariable=self.output_path).grid(row=5, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         ttk.Button(main_frame, text="Browse", command=self.browse_output).grid(row=5, column=2, padx=5, pady=8)
         
-        # Output filename
         ttk.Label(main_frame, text="Output Filename:").grid(row=6, column=0, sticky=tk.W, pady=8)
-        self.output_filename_entry = ttk.Entry(main_frame, textvariable=self.output_filename)
-        self.output_filename_entry.grid(row=6, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
+        ttk.Entry(main_frame, textvariable=self.output_filename).grid(row=6, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         
-        # Progress area
+        # Progress
         ttk.Label(main_frame, text="Progress:").grid(row=7, column=0, sticky=tk.W, pady=(20, 5))
         
-        # Progress bar
         self.progress_bar = ttk.Progressbar(main_frame, mode='indeterminate')
         self.progress_bar.grid(row=7, column=1, sticky=(tk.W, tk.E), pady=(20, 5), padx=5)
         
-        # Status label
         self.status_label = ttk.Label(main_frame, text="Ready", foreground="green")
         self.status_label.grid(row=7, column=2, sticky=tk.W, pady=(20, 5))
         
-        # Progress frame with text and scrollbar
+        # Log area
         progress_frame = ttk.Frame(main_frame)
         progress_frame.grid(row=8, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=8)
         progress_frame.columnconfigure(0, weight=1)
@@ -342,54 +248,32 @@ class ReVancedGUI:
         self.progress_text = tk.Text(progress_frame, height=15, width=70, font=("Consolas", 10))
         self.progress_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        # Scrollbar for progress text
         scrollbar = ttk.Scrollbar(progress_frame, orient=tk.VERTICAL, command=self.progress_text.yview)
         scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
         self.progress_text.configure(yscrollcommand=scrollbar.set)
         
-
-        
-        # Configure row weights for proper resizing
         main_frame.rowconfigure(8, weight=1)
-        
-        # Set initial focus
         self.cli_entry.focus()
-        
-        # Load saved configuration
         self.load_config()
         
-
-        
     def on_window_resize(self, event):
-        # Adjust font sizes based on window dimensions
         width = self.root.winfo_width()
-        if width > 800:
-            self.progress_text.configure(font=("Consolas", 10))
-        else:
-            self.progress_text.configure(font=("Consolas", 9))
+        font_size = 10 if width > 800 else 9
+        self.progress_text.configure(font=("Consolas", font_size))
             
     def parse_java_version(self, version_string):
-        """Parse Java version handling both old and new formats"""
         try:
-            # Remove quotes and extra whitespace
             version = version_string.strip().strip('"')
-            
-            # Handle old format (1.8.0_291) vs new format (11.0.1)
             if version.startswith('1.'):
-                # Old format: 1.8.0_291 -> 8
                 return int(version.split('.')[1])
             else:
-                # New format: 11.0.1 -> 11
                 return int(version.split('.')[0])
         except (ValueError, IndexError):
             return 0
             
     def check_java_installation(self):
-        """Improved Java detection with better parsing"""
         try:
-            result = subprocess.run(['java', '-version'], 
-                                  capture_output=True, text=True, timeout=5)
-            
+            result = subprocess.run(['java', '-version'], capture_output=True, text=True, timeout=5)
             version_output = result.stderr.split('\n')[0] if result.stderr else ""
             version_match = re.search(r'version\s+"([^"]+)"', version_output)
             
@@ -412,19 +296,16 @@ class ReVancedGUI:
             return False, f"Error: {str(e)}"
             
     def validate_java_version_compatibility(self):
-        """Check if Java version is compatible with ReVanced CLI"""
         java_ok, java_info = self.check_java_installation()
         if java_ok:
             version_num = self.parse_java_version(java_info)
-            if version_num < 11:  # ReVanced may require Java 11+
+            if version_num < 11:
                 return False, f"Java {version_num} detected. ReVanced CLI may require Java 11+"
         return java_ok, java_info
     
     def validate_system_requirements(self):
-        """Comprehensive system check"""
         self.system_status.set("Checking system requirements...")
         
-        # Check Java
         java_ok, java_info = self.validate_java_version_compatibility()
         self.java_version.set(java_info)
         
@@ -433,7 +314,6 @@ class ReVancedGUI:
             self.log_message(f"ERROR: Java requirement not met: {java_info}")
             return False
         
-        # Check disk space
         if PSUTIL_AVAILABLE:
             free_gb, total_gb = self.get_disk_usage(self.output_path.get())
             if free_gb > 0:
@@ -452,9 +332,7 @@ class ReVancedGUI:
         return True
     
     def load_config(self):
-        """Load configuration with validation"""
         if not self.save_config_enabled:
-            logging.info("Configuration loading disabled")
             return
             
         try:
@@ -462,26 +340,21 @@ class ReVancedGUI:
                 with open(self.config_file, 'r') as f:
                     config = json.load(f)
                 
-                # Validate config structure
                 if not isinstance(config, dict):
                     raise ValueError("Invalid config format")
                 
-                # Load preferences
                 self.save_logs_enabled = config.get('save_logs_enabled', False)
                 self.save_config_enabled = config.get('save_config_enabled', True)
                 
-                # Update checkbox variables if they exist
                 if hasattr(self, 'logs_var'):
                     self.logs_var.set(self.save_logs_enabled)
                 if hasattr(self, 'config_var'):
                     self.config_var.set(self.save_config_enabled)
                 
-                # Safely load values with defaults
                 self.cli_jar_path.set(str(config.get('last_cli_path', '')))
                 self.patches_rvp_path.set(str(config.get('last_patches_path', '')))
                 self.output_path.set(str(config.get('last_output_dir', '')))
                 
-                # Validate geometry string
                 geometry = config.get('window_geometry', '')
                 if geometry and re.match(r'\d+x\d+\+\d+\+\d+', geometry):
                     self.root.geometry(geometry)
@@ -494,12 +367,10 @@ class ReVancedGUI:
             logging.error(f"Unexpected config error: {e}")
     
     def save_config(self):
-        """Save configuration with error handling"""
         if not self.save_config_enabled:
-            return  # Don't save if disabled
+            return
             
         try:
-            # Ensure directory exists
             self.config_file.parent.mkdir(exist_ok=True)
             
             config = {
@@ -512,31 +383,24 @@ class ReVancedGUI:
                 'version': __version__,
             }
             
-            # Write atomically
             temp_file = self.config_file.with_suffix('.tmp')
             with open(temp_file, 'w') as f:
                 json.dump(config, f, indent=2)
             
-            # Atomic move
             temp_file.replace(self.config_file)
             
         except Exception as e:
             logging.error(f"Failed to save config: {e}")
 
-
-
     def start_progress(self, message="Processing..."):
-        """Start progress bar with status message"""
         self.progress_bar.start(10)
         self.status_label.config(text=message, foreground="blue")
         
     def stop_progress(self, message="Ready", color="green"):
-        """Stop progress bar with final status"""
         self.progress_bar.stop()
         self.status_label.config(text=message, foreground=color)
         
     def start_system_monitor(self):
-        """Start background system monitoring"""
         def monitor():
             while getattr(self, 'monitoring', False):
                 if PSUTIL_AVAILABLE:
@@ -548,18 +412,6 @@ class ReVancedGUI:
         self.monitoring = True
         thread = threading.Thread(target=monitor, daemon=True)
         thread.start()
-        
-
-
-
-            
-
-            
-
-            
-
-            
-
         
     def browse_cli_jar(self):
         filename = filedialog.askopenfilename(
@@ -599,7 +451,6 @@ class ReVancedGUI:
                 self.save_config()
     
     def update_output_filename(self, *args):
-        # Automatically set output filename with "-patched" suffix
         apk_path = self.apk_path.get()
         if apk_path:
             base_name = os.path.basename(apk_path)
@@ -610,7 +461,6 @@ class ReVancedGUI:
         self.progress_text.delete(1.0, tk.END)
     
     def export_log(self):
-        """Export the current log to a file"""
         filename = filedialog.asksaveasfilename(
             title="Export Log File",
             defaultextension=".log",
@@ -632,15 +482,12 @@ class ReVancedGUI:
         logging.info(message)
     
     def validate_inputs(self):
-        """Validate all input fields before patching"""
         errors = []
         
-        # Check Java
         java_ok, java_info = self.validate_java_version_compatibility()
         if not java_ok:
             errors.append(('java_not_found', java_info))
         
-        # Check files exist
         if not self.cli_jar_path.get() or not os.path.exists(self.cli_jar_path.get()):
             errors.append(('file_not_found', "ReVanced CLI JAR file not found"))
         
@@ -653,12 +500,11 @@ class ReVancedGUI:
         if not self.output_path.get() or not os.path.exists(self.output_path.get()):
             errors.append(('file_not_found', "Output directory not found"))
         
-        # Check disk space
         if PSUTIL_AVAILABLE:
             free_gb, total_gb = self.get_disk_usage(self.output_path.get())
             if free_gb > 0:
                 apk_size = os.path.getsize(self.apk_path.get()) if self.apk_path.get() and os.path.exists(self.apk_path.get()) else 0
-                needed_gb = (apk_size * 3) // (1024**3)  # Approximate space needed (3x APK size)
+                needed_gb = (apk_size * 3) // (1024**3)
                 
                 if free_gb < needed_gb:
                     errors.append(('insufficient_memory', f"Need {needed_gb}GB, only {free_gb}GB free"))
@@ -666,7 +512,6 @@ class ReVancedGUI:
         return errors
 
     def handle_patching_error(self, error_type, details):
-        """Provide specific recovery suggestions"""
         error_solutions = {
             'java_not_found': "Install Java 8+ and ensure it's in your PATH",
             'file_not_found': "Check that all required files exist and are accessible",
@@ -683,14 +528,12 @@ class ReVancedGUI:
         messagebox.showerror("Patching Error", error_msg)
     
     def patch_apk(self):
-        # Validate inputs
         validation_errors = self.validate_inputs()
         if validation_errors:
             for error_type, details in validation_errors:
                 self.handle_patching_error(error_type, details)
             return
         
-        # Build command
         output_file = os.path.join(self.output_path.get(), self.output_filename.get())
         cmd = [
             "java", "-jar", 
@@ -711,15 +554,12 @@ class ReVancedGUI:
         self.log_message(f"Command: {' '.join(cmd)}")
         self.log_message("-" * 60)
         
-        # Start progress indicator
         self.start_progress("Patching APK...")
         self.start_time = time.time()
         
-        # Save config before starting (if enabled)
         if self.save_config_enabled:
             self.save_config()
         
-        # Run in separate thread to avoid freezing GUI
         thread = threading.Thread(target=self.run_patching, args=(cmd, output_file))
         thread.daemon = True
         thread.start()
@@ -734,7 +574,6 @@ class ReVancedGUI:
                 bufsize=1
             )
             
-            # Read output in real-time
             for line in process.stdout:
                 self.root.after(0, self.log_message, line.strip())
             
@@ -770,7 +609,6 @@ class ReVancedGUI:
             self.root.after(0, lambda: self.log_message("=" * 60))
 
 def main():
-    # Create root window with drag & drop support if available
     if DND_AVAILABLE:
         root = TkinterDnD.Tk()
     else:
@@ -778,8 +616,7 @@ def main():
         
     app = ReVancedGUI(root)
     
-    if app:  # Only proceed if initialization was successful
-        # Handle application close
+    if app:
         def on_closing():
             app.monitoring = False
             if app.save_config_enabled:
