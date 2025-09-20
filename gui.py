@@ -52,7 +52,7 @@ class ReVancedGUI:
         self.system_status = tk.StringVar(value="Checking system...")
         
         # Configuration options
-        self.save_logs_enabled = True  # Default: save logs
+        self.save_logs_enabled = False  # Default: don't save logs
         self.save_config_enabled = True  # Default: save configuration
         
         # Get script directory
@@ -63,7 +63,7 @@ class ReVancedGUI:
             self.script_dir = Path.cwd()
         
         # Configuration file path (in script directory)
-        self.config_file = self.script_dir / "revanced_gui_config.json"
+        self.config_file = self.script_dir / "config.json"
         
         # Monitoring
         self.monitoring = False
@@ -468,7 +468,7 @@ class ReVancedGUI:
                     raise ValueError("Invalid config format")
                 
                 # Load preferences
-                self.save_logs_enabled = config.get('save_logs_enabled', True)
+                self.save_logs_enabled = config.get('save_logs_enabled', False)
                 self.save_config_enabled = config.get('save_config_enabled', True)
                 
                 # Update checkbox variables if they exist

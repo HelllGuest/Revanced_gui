@@ -129,5 +129,5 @@ dmypy.json
 .pyre/
 
 # ReVanced GUI specific
-.revanced_gui_*.json
-.revanced_gui_logs/
+logs
+config.json
