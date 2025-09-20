@@ -227,63 +227,7 @@ class ReVancedGUI:
         
         self.log_message(f"Settings updated - Logs: {'ON' if self.save_logs_enabled else 'OFF'}, Config: {'ON' if self.save_config_enabled else 'OFF'}")
 
-    def show_settings_info(self):
-        """Show settings information dialog"""
-        info_window = tk.Toplevel(self.root)
-        info_window.title("Settings Information")
-        info_window.geometry("500x300")
-        info_window.resizable(False, False)
-        info_window.transient(self.root)
-        info_window.grab_set()
 
-        # Center the window
-        info_window.update_idletasks()
-        x = self.root.winfo_x() + (self.root.winfo_width() - info_window.winfo_width()) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - info_window.winfo_height()) // 2
-        info_window.geometry(f"+{x}+{y}")
-
-        # Info content
-        info_frame = ttk.Frame(info_window, padding="20")
-        info_frame.pack(fill=tk.BOTH, expand=True)
-
-        ttk.Label(info_frame, text="Settings Information", font=("Arial", 14, "bold")).pack(pady=(0, 15))
-
-        # Settings explanation
-        explanation_text = tk.Text(info_frame, wrap=tk.WORD, font=("Arial", 10), height=12)
-        explanation_text.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
-
-        explanation_content = f"""SETTINGS EXPLANATION:
-
-Logs checkbox:
-• When ON: Logs are saved to '{self.script_dir / 'logs'}' folder
-• When OFF: Logs only appear in the console/terminal
-• Default: ON
-
-Config checkbox:
-• When ON: Remembers window size, file paths, and settings
-• When OFF: Starts fresh each time (no memory of previous session)
-• Default: ON
-
-LOCATION: Settings are located in the top-right corner of the main window
-for easy access without taking up extra space.
-
-FILE LOCATIONS:
-• Script directory: {self.script_dir}
-• Configuration file: {self.config_file}
-• Logs directory: {self.script_dir / 'logs'}
-
-BENEFITS:
-• All files stay with the application (portable)
-• No hidden files in system directories
-• Easy to backup or move the entire application
-• Full user control over file creation
-• Compact interface - settings don't clutter the main workspace"""
-
-        explanation_text.insert(tk.END, explanation_content)
-        explanation_text.config(state=tk.DISABLED)
-
-        # Close button
-        ttk.Button(info_frame, text="Close", command=info_window.destroy).pack()
 
     def show_documentation(self):
         """Open documentation in browser"""
@@ -491,14 +435,7 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         )
         config_check.pack(side=tk.LEFT, padx=(0, 10))
         
-        # Settings info button (small)
-        info_button = ttk.Button(
-            status_right, 
-            text="?", 
-            command=self.show_settings_info,
-            width=3
-        )
-        info_button.pack(side=tk.LEFT)
+
         
         # CLI JAR file selection
         ttk.Label(main_frame, text="ReVanced CLI JAR:").grid(row=2, column=0, sticky=tk.W, pady=8)
