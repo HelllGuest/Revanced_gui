@@ -36,8 +36,8 @@ class ReVancedGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("ReVanced Patcher")
-        self.root.geometry("850x650")
-        self.root.minsize(750, 550)
+        self.root.geometry("900x650")
+        self.root.minsize(800, 550)
         self.root.resizable(True, True)
         
         # Check dependencies before initializing
@@ -54,10 +54,19 @@ class ReVancedGUI:
         self.java_version = tk.StringVar(value="Checking...")
         self.system_status = tk.StringVar(value="Checking system...")
         
-        # Configuration
-        self.config_file = Path.home() / ".revanced_gui_config.json"
-        self.recent_files_file = Path.home() / ".revanced_gui_recent.json"
-        self.profiles_file = Path.home() / ".revanced_gui_profiles.json"
+        # Configuration options
+        self.save_logs_enabled = True  # Default: save logs
+        self.save_config_enabled = True  # Default: save configuration
+        
+        # Get script directory
+        try:
+            self.script_dir = Path(__file__).parent.resolve()
+        except (NameError, AttributeError):
+            # Fallback to current working directory if __file__ is not available
+            self.script_dir = Path.cwd()
+        
+        # Configuration file path (in script directory)
+        self.config_file = self.script_dir / "revanced_gui_config.json"
         
         # Monitoring
         self.monitoring = False
@@ -67,11 +76,7 @@ class ReVancedGUI:
         self.max_retries = 3
         
         self.setup_logging()
-        
-        # Create menu bar
         self.create_menu()
-        
-        # Configure style for better scaling
         self.setup_ui()
         
         # Bind events for dynamic scaling
@@ -107,20 +112,26 @@ class ReVancedGUI:
         
     def setup_logging(self):
         """Configure logging to file"""
-        log_dir = Path.home() / ".revanced_gui_logs"
-        log_dir.mkdir(exist_ok=True)
+        handlers = [logging.StreamHandler()]  # Always log to console
         
-        log_file = log_dir / f"revanced_gui_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        if self.save_logs_enabled:
+            # Create logs directory in script directory
+            log_dir = self.script_dir / "logs"
+            log_dir.mkdir(exist_ok=True)
+            
+            log_file = log_dir / f"revanced_gui_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+            handlers.append(logging.FileHandler(log_file))
         
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_file),
-                logging.StreamHandler()
-            ]
+            handlers=handlers
         )
-        logging.info(f"ReVanced GUI v{__version__} started")
+        
+        if self.save_logs_enabled:
+            logging.info(f"ReVanced GUI v{__version__} started - Logs saved to: {log_dir}")
+        else:
+            logging.info(f"ReVanced GUI v{__version__} started - Logging to console only")
         
     def create_menu(self):
         # Create a menu bar
@@ -131,18 +142,6 @@ class ReVancedGUI:
         file_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Clear Log", command=self.clear_log, accelerator="Ctrl+L")
-        file_menu.add_separator()
-        
-        # Recent Files submenu
-        self.recent_menu = tk.Menu(file_menu, tearoff=0)
-        file_menu.add_cascade(label="Recent Files", menu=self.recent_menu)
-        
-        # Profiles submenu
-        self.profiles_menu = tk.Menu(file_menu, tearoff=0)
-        file_menu.add_cascade(label="Profiles", menu=self.profiles_menu)
-        self.profiles_menu.add_command(label="Save Current Profile", command=self.save_current_profile)
-        self.profiles_menu.add_separator()
-        
         file_menu.add_separator()
         file_menu.add_command(label="Export Log", command=self.export_log, accelerator="Ctrl+S")
         file_menu.add_separator()
@@ -155,6 +154,8 @@ class ReVancedGUI:
         view_menu.add_command(label="Analyze APK", command=self.analyze_apk)
         view_menu.add_command(label="Analyze Patches", command=self.analyze_patches_file)
         
+
+        
         # Create Help menu
         help_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Help", menu=help_menu)
@@ -162,10 +163,6 @@ class ReVancedGUI:
         help_menu.add_command(label="Help Contents", command=self.show_help_dialog)
         help_menu.add_separator()
         help_menu.add_command(label="About", command=self.show_about)
-        
-        # Load recent files and profiles
-        self.load_recent_files()
-        self.load_profiles()
         
     def setup_keyboard_shortcuts(self):
         """Setup keyboard shortcuts"""
@@ -188,64 +185,24 @@ class ReVancedGUI:
             for widget in [self.cli_entry, self.patches_entry, self.apk_entry]:
                 widget.drop_target_register(DND_FILES)
                 widget.dnd_bind('<<Drop>>', self.handle_drop)
-    
+
     def handle_drop(self, event):
-        """Handle dropped files"""
+        """Handle dropped files for drag & drop support"""
         try:
             files = self.root.tk.splitlist(event.data)
             if files:
                 file_path = files[0]
                 ext = os.path.splitext(file_path)[1].lower()
-                
                 if ext == '.jar':
                     self.cli_jar_path.set(file_path)
-                    self.add_to_recent_files('cli', file_path)
                 elif ext == '.rvp':
                     self.patches_rvp_path.set(file_path)
-                    self.add_to_recent_files('patches', file_path)
                 elif ext == '.apk':
                     self.apk_path.set(file_path)
-                    self.add_to_recent_files('apk', file_path)
-                    
                 self.log_message(f"Dropped file: {os.path.basename(file_path)}")
         except Exception as e:
             self.log_message(f"Drag & drop error: {e}")
-    
-    def show_system_info(self):
-        """Display system information dialog"""
-        info_window = tk.Toplevel(self.root)
-        info_window.title("System Information")
-        info_window.geometry("550x450")
-        info_window.resizable(False, False)
-        info_window.transient(self.root)
-        info_window.grab_set()
-        
-        # Center the window
-        info_window.update_idletasks()
-        x = self.root.winfo_x() + (self.root.winfo_width() - info_window.winfo_width()) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - info_window.winfo_height()) // 2
-        info_window.geometry(f"+{x}+{y}")
-        
-        # System info content
-        info_frame = ttk.Frame(info_window, padding="20")
-        info_frame.pack(fill=tk.BOTH, expand=True)
-        
-        ttk.Label(info_frame, text="System Information", font=("Arial", 16, "bold")).pack(pady=(0, 15))
-        
-        # System details
-        details = self.get_system_details()
-        
-        text_widget = tk.Text(info_frame, wrap=tk.WORD, font=("Consolas", 10), height=18)
-        text_widget.pack(fill=tk.BOTH, expand=True, pady=5)
-        
-        for key, value in details.items():
-            text_widget.insert(tk.END, f"{key:<25}: {value}\n")
-        
-        text_widget.config(state=tk.DISABLED)
-        
-        # Close button
-        ttk.Button(info_frame, text="Close", command=info_window.destroy).pack(pady=(15, 0))
-    
+
     def get_system_details(self):
         """Get detailed system information"""
         details = {
@@ -301,11 +258,117 @@ class ReVancedGUI:
         except Exception as e:
             self.log_message(f"Warning: Could not check disk usage: {e}")
             return 0, 0
+
+    def show_system_info(self):
+        """Display system information dialog"""
+        info_window = tk.Toplevel(self.root)
+        info_window.title("System Information")
+        info_window.geometry("550x450")
+        info_window.resizable(False, False)
+        info_window.transient(self.root)
+        info_window.grab_set()
+
+        # Center the window
+        info_window.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() - info_window.winfo_width()) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - info_window.winfo_height()) // 2
+        info_window.geometry(f"+{x}+{y}")
+
+        # System info content
+        info_frame = ttk.Frame(info_window, padding="20")
+        info_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(info_frame, text="System Information", font=("Arial", 16, "bold")).pack(pady=(0, 15))
+
+        # System details
+        details = self.get_system_details()
+
+        text_widget = tk.Text(info_frame, wrap=tk.WORD, font=("Consolas", 10), height=18)
+        text_widget.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        for key, value in details.items():
+            text_widget.insert(tk.END, f"{key:<25}: {value}\n")
+
+        text_widget.config(state=tk.DISABLED)
+
+        # Close button
+        ttk.Button(info_frame, text="Close", command=info_window.destroy).pack(pady=(15, 0))
     
+
+
+    def update_preferences(self):
+        """Update preferences when checkboxes change"""
+        self.save_logs_enabled = self.logs_var.get()
+        self.save_config_enabled = self.config_var.get()
+        
+        # Save preferences to config if config saving is enabled
+        if self.save_config_enabled:
+            self.save_config()
+        
+        self.log_message(f"Settings updated - Logs: {'ON' if self.save_logs_enabled else 'OFF'}, Config: {'ON' if self.save_config_enabled else 'OFF'}")
+
+    def show_settings_info(self):
+        """Show settings information dialog"""
+        info_window = tk.Toplevel(self.root)
+        info_window.title("Settings Information")
+        info_window.geometry("500x300")
+        info_window.resizable(False, False)
+        info_window.transient(self.root)
+        info_window.grab_set()
+
+        # Center the window
+        info_window.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() - info_window.winfo_width()) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - info_window.winfo_height()) // 2
+        info_window.geometry(f"+{x}+{y}")
+
+        # Info content
+        info_frame = ttk.Frame(info_window, padding="20")
+        info_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(info_frame, text="Settings Information", font=("Arial", 14, "bold")).pack(pady=(0, 15))
+
+        # Settings explanation
+        explanation_text = tk.Text(info_frame, wrap=tk.WORD, font=("Arial", 10), height=12)
+        explanation_text.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+
+        explanation_content = f"""SETTINGS EXPLANATION:
+
+Logs checkbox:
+• When ON: Logs are saved to '{self.script_dir / 'logs'}' folder
+• When OFF: Logs only appear in the console/terminal
+• Default: ON
+
+Config checkbox:
+• When ON: Remembers window size, file paths, and settings
+• When OFF: Starts fresh each time (no memory of previous session)
+• Default: ON
+
+LOCATION: Settings are located in the top-right corner of the main window
+for easy access without taking up extra space.
+
+FILE LOCATIONS:
+• Script directory: {self.script_dir}
+• Configuration file: {self.config_file}
+• Logs directory: {self.script_dir / 'logs'}
+
+BENEFITS:
+• All files stay with the application (portable)
+• No hidden files in system directories
+• Easy to backup or move the entire application
+• Full user control over file creation
+• Compact interface - settings don't clutter the main workspace"""
+
+        explanation_text.insert(tk.END, explanation_content)
+        explanation_text.config(state=tk.DISABLED)
+
+        # Close button
+        ttk.Button(info_frame, text="Close", command=info_window.destroy).pack()
+
     def show_documentation(self):
         """Open documentation in browser"""
-        webbrowser.open("https://github.com/revanced/revanced-documentation")
-    
+        webbrowser.open("https://github.com/revanced/revanced-documentation")  
+  
     def show_help_dialog(self):
         """Show comprehensive help dialog"""
         help_window = tk.Toplevel(self.root)
@@ -472,15 +535,60 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         main_frame.columnconfigure(1, weight=1)
         
-        # Status bar
+        # Status bar with settings
         status_frame = ttk.Frame(main_frame)
         status_frame.grid(row=0, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 15))
+        status_frame.columnconfigure(1, weight=1)  # Make middle column expandable
         
-        ttk.Label(status_frame, text="Status:").pack(side=tk.LEFT)
-        ttk.Label(status_frame, textvariable=self.system_status, foreground="blue").pack(side=tk.LEFT, padx=(5, 0))
-        ttk.Label(status_frame, text="Java:").pack(side=tk.LEFT, padx=(20, 0))
-        ttk.Label(status_frame, textvariable=self.java_version).pack(side=tk.LEFT, padx=(5, 0))
+        # Left side - System status
+        status_left = ttk.Frame(status_frame)
+        status_left.grid(row=0, column=0, sticky=tk.W)
         
+        ttk.Label(status_left, text="Status:").pack(side=tk.LEFT)
+        ttk.Label(status_left, textvariable=self.system_status, foreground="blue").pack(side=tk.LEFT, padx=(5, 0))
+        ttk.Label(status_left, text="Java:").pack(side=tk.LEFT, padx=(20, 0))
+        ttk.Label(status_left, textvariable=self.java_version).pack(side=tk.LEFT, padx=(5, 0))
+        
+        # Right side - Settings
+        status_right = ttk.Frame(status_frame)
+        status_right.grid(row=0, column=2, sticky=tk.E)
+        
+        # Create variables for checkboxes
+        self.logs_var = tk.BooleanVar(value=self.save_logs_enabled)
+        self.config_var = tk.BooleanVar(value=self.save_config_enabled)
+        
+        # Settings label
+        ttk.Label(status_right, text="Settings:", font=("Arial", 9)).pack(side=tk.LEFT, padx=(0, 5))
+        
+        # Save logs checkbox (compact)
+        logs_check = ttk.Checkbutton(
+            status_right, 
+            text="Logs", 
+            variable=self.logs_var,
+            command=self.update_preferences
+        )
+        logs_check.pack(side=tk.LEFT, padx=(0, 10))
+        self.create_tooltip(logs_check, "Save application logs to 'logs' folder in script directory")
+        
+        # Save config checkbox (compact)
+        config_check = ttk.Checkbutton(
+            status_right, 
+            text="Config", 
+            variable=self.config_var,
+            command=self.update_preferences
+        )
+        config_check.pack(side=tk.LEFT, padx=(0, 10))
+        self.create_tooltip(config_check, "Remember window size, file paths, and settings between sessions")
+        
+        # Settings info button (small)
+        info_button = ttk.Button(
+            status_right, 
+            text="?", 
+            command=self.show_settings_info,
+            width=3
+        )
+        info_button.pack(side=tk.LEFT)
+        self.create_tooltip(info_button, "Show detailed settings information")
         
         # CLI JAR file selection
         ttk.Label(main_frame, text="ReVanced CLI JAR:").grid(row=2, column=0, sticky=tk.W, pady=8)
@@ -676,6 +784,10 @@ For more help, visit: https://github.com/revanced/revanced-documentation
     
     def load_config(self):
         """Load configuration with validation"""
+        if not self.save_config_enabled:
+            logging.info("Configuration loading disabled")
+            return
+            
         try:
             if self.config_file.exists():
                 with open(self.config_file, 'r') as f:
@@ -684,6 +796,16 @@ For more help, visit: https://github.com/revanced/revanced-documentation
                 # Validate config structure
                 if not isinstance(config, dict):
                     raise ValueError("Invalid config format")
+                
+                # Load preferences
+                self.save_logs_enabled = config.get('save_logs_enabled', True)
+                self.save_config_enabled = config.get('save_config_enabled', True)
+                
+                # Update checkbox variables if they exist
+                if hasattr(self, 'logs_var'):
+                    self.logs_var.set(self.save_logs_enabled)
+                if hasattr(self, 'config_var'):
+                    self.config_var.set(self.save_config_enabled)
                 
                 # Safely load values with defaults
                 self.cli_jar_path.set(str(config.get('last_cli_path', '')))
@@ -699,17 +821,21 @@ For more help, visit: https://github.com/revanced/revanced-documentation
                 
         except (json.JSONDecodeError, ValueError, OSError) as e:
             logging.warning(f"Config load error (using defaults): {e}")
-            # Continue with empty defaults
         except Exception as e:
             logging.error(f"Unexpected config error: {e}")
     
     def save_config(self):
         """Save configuration with error handling"""
+        if not self.save_config_enabled:
+            return  # Don't save if disabled
+            
         try:
             # Ensure directory exists
             self.config_file.parent.mkdir(exist_ok=True)
             
             config = {
+                'save_logs_enabled': self.save_logs_enabled,
+                'save_config_enabled': self.save_config_enabled,
                 'last_cli_path': self.cli_jar_path.get(),
                 'last_patches_path': self.patches_rvp_path.get(),
                 'last_output_dir': self.output_path.get(),
@@ -722,200 +848,14 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             with open(temp_file, 'w') as f:
                 json.dump(config, f, indent=2)
             
+            # Atomic move
             temp_file.replace(self.config_file)
-            logging.info("Configuration saved")
             
-        except (OSError, json.JSONEncodeError) as e:
+        except Exception as e:
             logging.error(f"Failed to save config: {e}")
-            
-    def load_recent_files(self):
-        """Load recent files from disk"""
-        try:
-            if self.recent_files_file.exists():
-                with open(self.recent_files_file, 'r') as f:
-                    self.recent_files = json.load(f)
-                self.update_recent_menu()
-        except:
-            self.recent_files = {'cli': [], 'patches': [], 'apk': []}
-            
-    def save_recent_files(self):
-        """Save recent files to disk"""
-        try:
-            with open(self.recent_files_file, 'w') as f:
-                json.dump(self.recent_files, f, indent=2)
-        except:
-            pass
-            
-    def load_profiles(self):
-        """Load saved profiles"""
-        try:
-            if self.profiles_file.exists():
-                with open(self.profiles_file, 'r') as f:
-                    self.profiles = json.load(f)
-                self.update_profiles_menu()
-        except:
-            self.profiles = {}
-            
-    def save_profiles(self):
-        """Save profiles to disk"""
-        try:
-            with open(self.profiles_file, 'w') as f:
-                json.dump(self.profiles, f, indent=2)
-        except:
-            pass
-            
-    def update_recent_menu(self):
-        """Update recent files menu"""
-        self.recent_menu.delete(0, tk.END)
-        
-        if hasattr(self, 'recent_files'):
-            for file_type, files in self.recent_files.items():
-                if files:
-                    try:
-                        menu_index = self.recent_menu.index(tk.END)
-                        if menu_index is not None and menu_index > 0:
-                            self.recent_menu.add_separator()
-                    except tk.TclError:
-                        pass  # Menu is empty, continue
-                    
-                    self.recent_menu.add_command(label=f"{file_type.upper()} Files", state=tk.DISABLED)
-                    
-                    for file_path in files:
-                        if os.path.exists(file_path):
-                            filename = os.path.basename(file_path)
-                            self.recent_menu.add_command(
-                                label=f"  {filename}", 
-                                command=lambda p=file_path, t=file_type: self.load_recent_file(t, p)
-                            )
-        
-        try:
-            menu_index = self.recent_menu.index(tk.END)
-            if menu_index is None or menu_index == 0:
-                self.recent_menu.add_command(label="No recent files", state=tk.DISABLED)
-        except tk.TclError:
-            self.recent_menu.add_command(label="No recent files", state=tk.DISABLED)
-            
-    def update_profiles_menu(self):
-        """Update profiles menu"""
-        self.profiles_menu.delete(2, tk.END)  # Clear existing profiles
-        
-        if hasattr(self, 'profiles'):
-            for profile_name in self.profiles.keys():
-                self.profiles_menu.add_command(
-                    label=profile_name,
-                    command=lambda n=profile_name: self.load_profile(n)
-                )
-        
-        if len(self.profiles) == 0:
-            self.profiles_menu.add_command(label="No saved profiles", state=tk.DISABLED)
-            
-    def add_to_recent_files(self, file_type, file_path):
-        """Add file to recent files list"""
-        if not hasattr(self, 'recent_files'):
-            self.recent_files = {'cli': [], 'patches': [], 'apk': []}
-        
-        # Remove if already exists and add to front
-        if file_path in self.recent_files.get(file_type, []):
-            self.recent_files[file_type].remove(file_path)
-        
-        self.recent_files[file_type].insert(0, file_path)
-        
-        # Keep only 5 recent files per type
-        self.recent_files[file_type] = self.recent_files[file_type][:5]
-        
-        self.update_recent_menu()
-        self.save_recent_files()
-        
-    def load_recent_file(self, file_type, file_path):
-        """Load a recent file"""
-        if os.path.exists(file_path):
-            if file_type == 'cli':
-                self.cli_jar_path.set(file_path)
-            elif file_type == 'patches':
-                self.patches_rvp_path.set(file_path)
-            elif file_type == 'apk':
-                self.apk_path.set(file_path)
-        else:
-            messagebox.showerror("File Not Found", f"File no longer exists:\n{file_path}")
-            # Remove from recent files
-            if file_path in self.recent_files.get(file_type, []):
-                self.recent_files[file_type].remove(file_path)
-                self.update_recent_menu()
-                self.save_recent_files()
-                
-    def save_current_profile(self):
-        """Save current settings as a profile"""
-        profile_name = simpledialog.askstring("Save Profile", "Enter profile name:")
-        if profile_name:
-            profile = {
-                'cli_path': self.cli_jar_path.get(),
-                'patches_path': self.patches_rvp_path.get(),
-                'output_dir': self.output_path.get()
-            }
-            
-            if not hasattr(self, 'profiles'):
-                self.profaces = {}
-            
-            self.profiles[profile_name] = profile
-            self.save_profiles()
-            self.update_profiles_menu()
-            self.log_message(f"Profile '{profile_name}' saved")
-            
-    def load_profile(self, profile_name):
-        """Load a saved profile"""
-        if profile_name in self.profiles:
-            profile = self.profiles[profile_name]
-            self.cli_jar_path.set(profile.get('cli_path', ''))
-            self.patches_rvp_path.set(profile.get('patches_path', ''))
-            self.output_path.set(profile.get('output_dir', ''))
-            self.log_message(f"Profile '{profile_name}' loaded")
-    
-    def handle_patching_error(self, error_type, details):
-        """Provide specific recovery suggestions"""
-        error_solutions = {
-            'java_not_found': "Install Java JRE 8+ and add to PATH",
-            'insufficient_memory': "Close other applications or increase Java heap size with -Xmx option",
-            'corrupted_apk': "Try a different APK file or redownload it",
-            'patch_mismatch': "Ensure patches are compatible with APK version",
-            'file_not_found': "Check that all file paths are correct and files exist",
-            'permission_denied': "Check file permissions and try running as administrator if needed"
-        }
-        
-        solution = error_solutions.get(error_type, "Check the log for details and try again")
-        error_msg = f"Error: {details}\nSolution: {solution}"
-        
-        self.log_message(error_msg)
-        messagebox.showerror("Patching Error", error_msg)
-        
-        # Generate error report
-        report_file = self.generate_error_report(details)
-        self.log_message(f"Error report saved: {report_file}")
-        
-    def generate_error_report(self, error_details):
-        """Generate detailed error report for troubleshooting"""
-        report = {
-            'timestamp': datetime.now().isoformat(),
-            'version': __version__,
-            'system': {
-                'platform': platform.platform(),
-                'python': sys.version,
-                'java': self.java_version.get()
-            },
-            'files': {
-                'cli_jar': os.path.basename(self.cli_jar_path.get()) if self.cli_jar_path.get() else None,
-                'patches': os.path.basename(self.patches_rvp_path.get()) if self.patches_rvp_path.get() else None,
-                'apk': os.path.basename(self.apk_path.get()) if self.apk_path.get() else None
-            },
-            'error': error_details
-        }
-        
-        report_file = Path.home() / f".revanced_gui_error_{int(time.time())}.json"
-        with open(report_file, 'w') as f:
-            json.dump(report, f, indent=2)
-        
-        self.log_message(f"Error report saved: {report_file}")
-        return report_file
-        
+
+
+
     def start_progress(self, message="Processing..."):
         """Start progress bar with status message"""
         self.progress_bar.start(10)
@@ -947,13 +887,10 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             with zipfile.ZipFile(apk_path, 'r') as apk:
                 # Check for essential APK components
                 files = apk.namelist()
-                required_files = ['AndroidManifest.xml', 'classes.dex']
-                
-                missing = [f for f in required_files if f not in files]
-                if missing:
-                    return False, f"Invalid APK: missing {', '.join(missing)}"
-                
-            # Check file size (reasonable limits)
+                if 'AndroidManifest.xml' not in files:
+                    return False, "Invalid APK: missing AndroidManifest.xml"
+            
+            # Check file size (warn if unusually large)
             size_mb = os.path.getsize(apk_path) / (1024 * 1024)
             if size_mb > 500:  # > 500MB seems unusual
                 self.log_message(f"Warning: Large APK file ({size_mb:.1f} MB)")
@@ -982,27 +919,27 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         """Analyze APK and show detailed information"""
         apk_path = self.apk_path.get()
         if not apk_path or not os.path.exists(apk_path):
-            messagebox.showwarning("No APK", "Please select an APK file first")
+            messagebox.showerror("Error", "Please select a valid APK file first")
             return
         
         try:
-            # Use lazy loading for large files
-            file_size = os.path.getsize(apk_path)
-            if file_size > 100 * 1024 * 1024:  # > 100MB
-                info = self.quick_apk_analysis(apk_path)
+            # Quick analysis for large files
+            size_mb = os.path.getsize(apk_path) / (1024 * 1024)
+            if size_mb > 100:
+                analysis = self.quick_apk_analysis(apk_path)
             else:
-                info = self.full_apk_analysis(apk_path)
-                
-            # Show analysis dialog
+                analysis = self.full_apk_analysis(apk_path)
+            
+            # Show analysis window
             analysis_window = tk.Toplevel(self.root)
             analysis_window.title("APK Analysis")
-            analysis_window.geometry("450x350")
+            analysis_window.geometry("600x400")
             
             text_widget = tk.Text(analysis_window, wrap=tk.WORD, font=("Consolas", 10))
             text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
             
-            for key, value in info.items():
-                text_widget.insert(tk.END, f"{key:<25}: {value}\n")
+            for key, value in analysis.items():
+                text_widget.insert(tk.END, f"{key}: {value}\n")
             
             text_widget.config(state=tk.DISABLED)
             
@@ -1013,10 +950,9 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         """Quick analysis for large APK files"""
         size_mb = os.path.getsize(apk_path) / (1024 * 1024)
         return {
-            'Filename': os.path.basename(apk_path),
-            'Size': f"{size_mb:.1f} MB",
-            'Analysis': 'Quick analysis (large file)',
-            'Recommendation': 'Proceed with patching if file is valid'
+            "File Size": f"{size_mb:.1f} MB",
+            "Analysis": "Quick analysis (large file)",
+            "Status": "Ready for patching"
         }
             
     def full_apk_analysis(self, apk_path):
@@ -1027,54 +963,44 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             
             # Count different file types
             dex_files = [f for f in files if f.endswith('.dex')]
-            lib_files = [f for f in files if f.startswith('lib/')]
-            res_files = [f for f in files if f.startswith('res/')]
+            so_files = [f for f in files if f.endswith('.so')]
             
             return {
-                'Filename': os.path.basename(apk_path),
-                'Size': f"{size_mb:.1f} MB",
-                'Total Files': len(files),
-                'DEX Files': len(dex_files),
-                'Native Libraries': len(lib_files),
-                'Resource Files': len(res_files),
-                'Has Manifest': 'Yes' if 'AndroidManifest.xml' in files else 'No',
-                'Has Resources': 'Yes' if len(res_files) > 0 else 'No',
-                'Has Native Code': 'Yes' if len(lib_files) > 0 else 'No'
+                "File Size": f"{size_mb:.1f} MB",
+                "Total Files": len(files),
+                "DEX Files": len(dex_files),
+                "Native Libraries": len(so_files),
+                "Has Manifest": "AndroidManifest.xml" in files,
+                "Analysis": "Complete",
+                "Status": "Ready for patching"
             }
             
     def analyze_patches_file(self):
         """Analyze patches file"""
         patches_path = self.patches_rvp_path.get()
         if not patches_path or not os.path.exists(patches_path):
-            messagebox.showwarning("No Patches", "Please select a patches file first")
+            messagebox.showerror("Error", "Please select a valid patches file first")
             return
-            
+        
         try:
-            # Try to read the patches file
-            with open(patches_path, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read(1000)  # Read first 1000 chars
-                
-            # Simple analysis - count lines and look for patch names
-            lines = content.split('\n')
-            patch_count = sum(1 for line in lines if 'patch' in line.lower() and 'name' in line.lower())
+            size_mb = os.path.getsize(patches_path) / (1024 * 1024)
             
-            info = {
-                'Filename': os.path.basename(patches_path),
-                'Size': f"{os.path.getsize(patches_path) / 1024:.1f} KB",
-                'Estimated Patches': patch_count,
-                'Format': 'RVP (ReVanced Patches)'
+            analysis = {
+                "File Size": f"{size_mb:.1f} MB",
+                "File Type": "ReVanced Patches",
+                "Status": "Ready for use"
             }
             
-            # Show analysis dialog
+            # Show analysis window
             analysis_window = tk.Toplevel(self.root)
             analysis_window.title("Patches Analysis")
-            analysis_window.geometry("450x200")
+            analysis_window.geometry("400x200")
             
             text_widget = tk.Text(analysis_window, wrap=tk.WORD, font=("Consolas", 10))
             text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
             
-            for key, value in info.items():
-                text_widget.insert(tk.END, f"{key:<25}: {value}\n")
+            for key, value in analysis.items():
+                text_widget.insert(tk.END, f"{key}: {value}\n")
             
             text_widget.config(state=tk.DISABLED)
             
@@ -1088,8 +1014,8 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         )
         if filename:
             self.cli_jar_path.set(filename)
-            self.add_to_recent_files('cli', filename)
-            self.save_config()
+            if self.save_config_enabled:
+                self.save_config()
     
     def browse_patches(self):
         filename = filedialog.askopenfilename(
@@ -1098,8 +1024,8 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         )
         if filename:
             self.patches_rvp_path.set(filename)
-            self.add_to_recent_files('patches', filename)
-            self.save_config()
+            if self.save_config_enabled:
+                self.save_config()
     
     def browse_apk(self):
         filename = filedialog.askopenfilename(
@@ -1108,14 +1034,15 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         )
         if filename:
             self.apk_path.set(filename)
-            self.add_to_recent_files('apk', filename)
-            self.save_config()
+            if self.save_config_enabled:
+                self.save_config()
     
     def browse_output(self):
         directory = filedialog.askdirectory(title="Select output directory")
         if directory:
             self.output_path.set(directory)
-            self.save_config()
+            if self.save_config_enabled:
+                self.save_config()
     
     def update_output_filename(self, *args):
         # Automatically set output filename with "-patched" suffix
@@ -1193,6 +1120,23 @@ For more help, visit: https://github.com/revanced/revanced-documentation
                     errors.append(('insufficient_memory', f"Need {needed_gb}GB, only {free_gb}GB free"))
         
         return errors
+
+    def handle_patching_error(self, error_type, details):
+        """Provide specific recovery suggestions"""
+        error_solutions = {
+            'java_not_found': "Install Java 8+ and ensure it's in your PATH",
+            'file_not_found': "Check that all required files exist and are accessible",
+            'corrupted_apk': "Use a different APK file or re-download the original",
+            'patch_mismatch': "Ensure APK version matches the patches version",
+            'insufficient_memory': "Free up disk space or use a smaller APK",
+            'unknown': "Check the log for detailed error information"
+        }
+        
+        solution = error_solutions.get(error_type, "Check the documentation for troubleshooting steps")
+        error_msg = f"Error: {details}\nSolution: {solution}"
+        
+        self.log_message(error_msg)
+        messagebox.showerror("Patching Error", error_msg)
     
     def patch_apk(self):
         # Validate inputs
@@ -1227,8 +1171,9 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         self.start_progress("Patching APK...")
         self.start_time = time.time()
         
-        # Save config before starting
-        self.save_config()
+        # Save config before starting (if enabled)
+        if self.save_config_enabled:
+            self.save_config()
         
         # Run in separate thread to avoid freezing GUI
         thread = threading.Thread(target=self.run_patching, args=(cmd, output_file))
@@ -1263,15 +1208,7 @@ For more help, visit: https://github.com/revanced/revanced-documentation
                 self.root.after(0, lambda: self.log_message("-" * 60))
                 self.root.after(0, lambda: self.log_message(error_msg))
                 self.root.after(0, lambda: self.stop_progress("Failed!", "red"))
-                
-                # Auto-retry logic
-                if self.retry_count < self.max_retries:
-                    self.retry_count += 1
-                    self.root.after(0, lambda: self.log_message(f"Auto-retry {self.retry_count}/{self.max_retries} in 3 seconds..."))
-                    self.root.after(3000, lambda: self.auto_retry_on_failure(cmd, output_file))
-                else:
-                    self.root.after(0, lambda: self.handle_patching_error('patch_mismatch', error_msg))
-                    self.retry_count = 0
+                self.root.after(0, lambda: self.handle_patching_error('patch_mismatch', error_msg))
                 
         except FileNotFoundError:
             error_msg = "Java not found. Please make sure Java is installed and available in your PATH."
@@ -1287,28 +1224,6 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             self.root.after(0, lambda: self.handle_patching_error('unknown', error_msg))
         finally:
             self.root.after(0, lambda: self.log_message("=" * 60))
-            
-    def auto_retry_on_failure(self, cmd, output_file):
-        """Automatically retry failed operations"""
-        self.log_message(f"Retrying... (attempt {self.retry_count}/{self.max_retries})")
-        
-        # Modify command for retry (add memory flags, etc.)
-        modified_cmd = self.modify_command_for_retry(cmd)
-        
-        self.start_progress(f"Retrying {self.retry_count}/{self.max_retries}...")
-        
-        thread = threading.Thread(target=self.run_patching, args=(modified_cmd, output_file))
-        thread.daemon = True
-        thread.start()
-        
-    def modify_command_for_retry(self, cmd):
-        """Modify command parameters for retry attempts"""
-        # Add memory parameters for retry
-        modified = cmd.copy()
-        # Insert memory option after 'java'
-        if len(modified) > 1 and modified[0] == 'java':
-            modified.insert(1, '-Xmx2G')  # Add more memory
-        return modified
 
 def main():
     # Create root window with drag & drop support if available
@@ -1323,7 +1238,8 @@ def main():
         # Handle application close
         def on_closing():
             app.monitoring = False
-            app.save_config()
+            if app.save_config_enabled:
+                app.save_config()
             root.quit()
         
         root.protocol("WM_DELETE_WINDOW", on_closing)
