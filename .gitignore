@@ -129,5 +129,8 @@ dmypy.json
 .pyre/
 
 # ReVanced GUI specific
-logs
+logs/
 config.json
+*.apk
+*.jar
+*.rvp

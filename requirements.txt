@@ -1,7 +1,9 @@
 # ReVanced GUI Dependencies
-# Core dependencies (required)
-# Note: tkinter is included with Python standard library
+# Python 3.8+ required
 
-# Optional dependencies (recommended for enhanced functionality)
-tkinterdnd2>=0.4.0  # For drag-and-drop file support
-psutil>=5.0.0       # For system monitoring and resource usage
+# Optional dependencies for enhanced functionality
+psutil>=5.9.0          # System monitoring and resource usage
+tkinterdnd2>=0.4.0     # Drag-and-drop file support
+
+# Note: tkinter is included with Python standard library
+# Java 8+ is required for ReVanced CLI functionality

@@ -1,324 +1,223 @@
-# ReVanced Patcher GUI
+# ReVanced GUI
 
-A cross-platform graphical user interface for the ReVanced CLI patching tool, making it easier to patch Android APK files with ReVanced patches.
+A comprehensive, user-friendly GUI wrapper for the ReVanced CLI tool that provides an easy-to-use interface for patching APK files with ReVanced patches.
 
-![ReVanced Patcher GUI](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-success) ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg) ![Python Version](https://img.shields.io/badge/Python-3.7%2B-blue) ![Version](https://img.shields.io/badge/Version-1.3.0-green)
+![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)
+![Python](https://img.shields.io/badge/python-3.8+-green.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 
-## Features
+## ✨ Features
 
-- **Cross-Platform Compatibility**: Works on Windows, macOS, and Linux
-- **User-Friendly Interface**: Intuitive GUI that simplifies the patching process
-- **Drag & Drop Support**: Drop files directly onto the interface for quick selection
-- **Automatic Naming**: Automatically adds "-patched" suffix to output files
-- **Real-Time Logging**: View patching progress in real-time with detailed output
-- **File Browsing**: Easy file selection with native dialogs
-- **Dynamic Scaling**: Responsive UI that adapts to window size changes
-- **System Monitoring**: Real-time system resource monitoring and validation
-- **Profile Management**: Save and load different configuration profiles
-- **Recent Files**: Quick access to recently used files
-- **Error Handling**: Comprehensive validation and error reporting with auto-retry
-- **APK Analysis**: Built-in APK and patches file analysis tools
-- **Patch Selection**: Choose specific patches to apply instead of using all patches
-- **Keyboard Shortcuts**: Full keyboard navigation support
+- **Cross-platform compatibility** - Works on Windows, macOS, and Linux
+- **Drag & drop support** - Simply drag files into the interface
+- **Real-time progress monitoring** - Watch the patching process live
+- **System validation** - Automatic Java and system requirements checking
+- **Configuration persistence** - Remembers your settings between sessions
+- **Resource monitoring** - Disk space and system resource checking
+- **Professional UI** - Clean, intuitive interface with help dialogs
+- **Comprehensive logging** - Detailed logs with export functionality
+- **Error handling** - Specific error messages with recovery suggestions
 
-## Prerequisites
+## 🚀 Quick Start
 
-Before using this application, ensure you have:
+### Prerequisites
 
-1. **Python 3.7 or higher** installed on your system
-2. **Java Runtime Environment (JRE)** installed (required by ReVanced CLI)
-3. **ReVanced CLI JAR** file (revanced-cli.jar)
-4. **ReVanced Patches** file (patches.rvp)
+- **Python 3.8+** (with tkinter support)
+- **Java 8+** (Java 11+ recommended)
+- **ReVanced CLI JAR** file
+- **ReVanced Patches RVP** file
 
-### Installing Prerequisites
+### Installation
 
-#### Python Installation
-- **Windows**: Download from [python.org](https://python.org)
-- **macOS**: Pre-installed on newer versions, or use Homebrew: `brew install python`
-- **Linux**: Use your package manager:
-  - Ubuntu/Debian: `sudo apt-get install python3 python3-tk`
-  - Fedora: `sudo dnf install python3 python3-tkinter`
-
-#### Java Installation
-- **Windows**: Download from [java.com](https://java.com)
-- **macOS**: `brew install openjdk`
-- **Linux**:
-  - Ubuntu/Debian: `sudo apt-get install openjdk-17-jre`
-  - Fedora: `sudo dnf install java-17-openjdk`
-
-#### ReVanced Files
-Download the latest ReVanced files from:
-- CLI: [ReVanced CLI Releases](https://github.com/revanced/revanced-cli/releases)
-- Patches: [ReVanced Patches Releases](https://github.com/revanced/revanced-patches/releases)
-
-## Quick Start
-
-1. **Download and run**:
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/revanced-patcher-gui.git
-   cd revanced-patcher-gui
-   pip install -r requirements.txt
-   python gui.py
+   git clone https://github.com/revanced/revanced-gui.git
+   cd revanced-gui
    ```
 
-2. **Drag & drop your files** or use the browse buttons to select:
-   - ReVanced CLI JAR file
-   - Patches RVP file  
-   - APK file to patch
-
-3. **Click "Patch APK"** and monitor the progress!
-
-## Installation
-
-1. **Download the script**:
-   ```bash
-   git clone https://github.com/your-username/revanced-patcher-gui.git
-   cd revanced-patcher-gui
-   ```
-
-2. **Install optional dependencies** (recommended):
+2. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
-
-3. **Run the application**:
+   
+   Or using the Makefile:
    ```bash
-   python gui.py
+   make install
    ```
 
-   Or if you have multiple Python versions:
+3. **Run the application:**
    ```bash
-   python3 gui.py
+   python main.py
+   ```
+   
+   Or using the Makefile:
+   ```bash
+   make run
    ```
 
-## Usage
+### Optional Dependencies
 
-### Step-by-Step Guide
+For enhanced functionality, install these optional packages:
 
-1. **Launch the application** by running the Python script
-2. **Select ReVanced CLI JAR**:
-   - Click "Browse" next to "ReVanced CLI JAR" or drag & drop the file
-   - Navigate to and select your `revanced-cli.jar` file
-
-3. **Select Patches File**:
-   - Click "Browse" next to "Patches RVP" or drag & drop the file
-   - Navigate to and select your `patches.rvp` file
-
-4. **Select APK File**:
-   - Click "Browse" next to "APK File" or drag & drop the file
-   - Select the APK you want to patch (e.g., `youtube.apk`)
-
-5. **Choose Output Directory**:
-   - Click "Browse" next to "Output Directory"
-   - Select where you want to save the patched APK
-
-6. **Configure Patch Selection** (Optional):
-   - Choose "Use all patches" for default behavior
-   - Or select "Select specific patches" to choose which patches to apply
-   - Click "Select Patches" to open the patch selection dialog
-   - Use the search function to find specific patches
-   - Select/deselect patches as needed
-
-7. **Review Output Filename**:
-   - The application automatically suggests a filename with "-patched" suffix
-   - You can modify this if desired
-
-8. **Start Patching**:
-   - Click "Patch APK" to begin the patching process
-   - Monitor progress in the log area with real-time updates
-
-9. **Completion**:
-   - When finished, you'll see a success message
-   - The patched APK will be saved in your chosen output directory
-
-### Advanced Features
-
-- **Drag & Drop**: Simply drag files from your file manager directly onto the input fields
-- **Profiles**: Save your current settings as a profile for quick reuse (File → Profiles → Save Current Profile)
-- **Recent Files**: Access recently used files from the File menu
-- **System Validation**: Use "Validate Setup" to check system requirements
-- **APK Analysis**: Analyze APK files before patching (View → Analyze APK)
-- **Patch Selection**: Choose specific patches to apply with search and filtering
-- **Keyboard Shortcuts**: 
-  - `Ctrl+O`: Open APK file
-  - `Ctrl+P`: Start patching
-  - `Ctrl+L`: Clear log
-  - `Ctrl+S`: Export log
-  - `F1`: System Information
-  - `F5`: Validate system
-
-### Menu Options
-
-**File Menu:**
-- **Clear Log**: Clear the progress log area
-- **Recent Files**: Access recently used files
-- **Profiles**: Save and load configuration profiles
-- **Export Log**: Save the current log to a file
-- **Exit**: Close the application
-
-**View Menu:**
-- **System Info**: Display detailed system information
-- **Analyze APK**: Analyze APK file structure and contents
-- **Analyze Patches**: Analyze patches file information
-
-**Help Menu:**
-- **Documentation**: Open ReVanced documentation in browser
-- **Help Contents**: Show comprehensive help dialog
-- **About**: View application information including:
-  - Version number (v1.3.0)
-  - Author information
-  - License details (MIT)
-  - GitHub repository link
-
-## Command Line Equivalent
-
-This GUI executes the following command behind the scenes:
+- **psutil** - System monitoring and resource usage
+- **tkinterdnd2** - Drag-and-drop file support
 
 ```bash
-java -jar revanced-cli.jar patch -p patches.rvp -o output.apk input.apk
+pip install psutil tkinterdnd2
 ```
 
-## Troubleshooting
+## 📖 Usage
+
+1. **Select ReVanced CLI JAR** - Browse or drag the CLI JAR file
+2. **Select Patches RVP** - Browse or drag the patches file
+3. **Choose APK file** - Select the APK you want to patch
+4. **Set output location** - Automatically set to APK's directory
+5. **Click "Patch APK"** - Start the patching process
+6. **Monitor progress** - Watch real-time output in the log area
+
+### Interface Overview
+
+- **Status Bar** - Shows system status, Java version, and quick actions
+- **File Inputs** - Browse or drag-and-drop required files
+- **Progress Section** - Real-time progress bar and status updates
+- **Log Area** - Detailed output with export functionality
+- **Settings** - Toggle logging and configuration persistence
+
+## 🏗️ Project Structure
+
+```
+revanced-gui/
+├── src/                    # Source code
+│   ├── core/              # Core functionality
+│   │   ├── config.py      # Configuration management
+│   │   ├── java_manager.py # Java detection and validation
+│   │   ├── patcher.py     # APK patching logic
+│   │   └── system_monitor.py # System monitoring
+│   ├── ui/                # User interface
+│   │   ├── dialogs.py     # Help and about dialogs
+│   │   └── main_window.py # Main application window
+│   └── revanced_gui.py    # Main application class
+├── main.py                # Application entry point
+├── requirements.txt       # Python dependencies
+├── setup.py              # Package setup configuration
+├── Makefile              # Development commands
+└── README.md             # This file
+```
+
+## 🛠️ Development
+
+### Development Setup
+
+```bash
+# Install development dependencies
+make install-dev
+
+# Check dependencies
+make check-deps
+
+# Run linting
+make lint
+
+# Format code
+make format
+
+# Clean build artifacts
+make clean
+```
+
+### Code Quality
+
+The project follows these standards:
+- **PEP 8** compliance with 100-character line limit
+- **Type hints** where applicable
+- **Comprehensive documentation** with docstrings
+- **Modular architecture** with separation of concerns
+- **Error handling** with specific recovery suggestions
+
+## 📋 System Requirements
+
+### Minimum Requirements
+- Python 3.8+ with tkinter
+- Java 8+ (for ReVanced CLI)
+- 2GB free disk space
+- 4GB RAM
+
+### Recommended Requirements
+- Python 3.10+
+- Java 11+
+- 5GB free disk space
+- 8GB RAM
+- psutil and tkinterdnd2 packages
+
+## 🔧 Configuration
+
+The application automatically saves configuration in `config.json`:
+
+```json
+{
+  "save_logs_enabled": false,
+  "save_config_enabled": true,
+  "last_cli_path": "/path/to/revanced-cli.jar",
+  "last_patches_path": "/path/to/patches.rvp",
+  "last_output_dir": "/path/to/output",
+  "window_geometry": "1000x600+100+100"
+}
+```
+
+## 📝 Logging
+
+Logs are saved to the `logs/` directory when enabled:
+- **Console output** - Always displayed in the interface
+- **File logging** - Optional, with timestamps and detailed information
+- **Export functionality** - Save current session log to file
+
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **Java Not Found Error**:
-   - Ensure Java is installed and available in your PATH
-   - Verify installation with: `java -version`
+**Java not found:**
+- Install Java 8+ and ensure it's in your PATH
+- Verify with: `java -version`
 
-2. **File Not Found Errors**:
-   - Double-check that all file paths are correct
-   - Ensure files exist at the specified locations
+**File not found errors:**
+- Check file paths and permissions
+- Ensure files are not corrupted
 
-3. **Patching Failures**:
-   - Make sure you're using compatible versions of CLI, patches, and APK
-   - Check the ReVanced documentation for version requirements
+**Patching failed:**
+- Verify APK version matches patches
+- Check available disk space
+- Review log output for specific errors
 
-4. **GUI Rendering Issues**:
-   - On Linux, ensure python3-tk is installed
-   - On macOS, if using a bundled Python, Tkinter should be included
+**Performance issues:**
+- Close other applications
+- Ensure sufficient RAM and disk space
+- Use original APK files from trusted sources
 
-### Logging
+## 🤝 Contributing
 
-The application provides detailed logs in the progress area:
-- Command being executed
-- Real-time output from the patching process
-- Success/error messages
-- Output file location
-- System resource monitoring
-- Error reports with troubleshooting suggestions
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Recent Improvements (v1.3.0)
-
-- **Code Quality**: Removed unused methods and variables for cleaner codebase
-- **Import Optimization**: Fixed missing imports and dependency management
-- **Enhanced UX**: Added drag & drop support for intuitive file selection
-- **System Integration**: Real-time system monitoring and validation
-- **Workflow Enhancement**: Profile management and recent files for better productivity
-- **Error Recovery**: Auto-retry mechanism for failed operations
-- **Analysis Tools**: Built-in APK and patches file analysis
-- **Patch Selection**: Advanced patch selection with search and filtering capabilities
-
-## Project Structure
-
-```
-revanced-patcher-gui/
-├── gui.py              # Main application script
-├── README.md           # This documentation
-└── requirements.txt    # Python dependencies (optional)
-```
-
-## Development
-
-### Dependencies
-
-**Core Dependencies (included with Python):**
-- `tkinter` for the GUI
-- `subprocess` for running commands
-- `threading` for non-blocking operations
-- `os` and `sys` for file operations
-
-**Optional Dependencies (recommended):**
-- `tkinterdnd2` for drag-and-drop file support
-- `psutil` for system monitoring and resource usage
-
-Install optional dependencies with:
-```bash
-pip install -r requirements.txt
-```
-
-### Modifying the Application
-
-To customize the application:
-
-1. **UI Changes**: Modify the `setup_ui()` method
-2. **Functionality**: Edit the patching logic in `patch_apk()` and `run_patching()`
-3. **Appearance**: Adjust colors, fonts, and layouts in the UI setup
-
-### Building Executables
-
-To create standalone executables:
-
-1. **Install PyInstaller**:
-   ```bash
-   pip install pyinstaller
-   ```
-
-2. **Build for your platform**:
-   ```bash
-   pyinstaller --onefile --windowed gui.py
-   ```
-
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contributing
+## 🙏 Acknowledgments
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit your changes: `git commit -am 'Add feature'`
-4. Push to the branch: `git push origin feature-name`
-5. Submit a pull request
+- **ReVanced Team** - For the amazing ReVanced project
+- **Community Contributors** - For feedback and improvements
+- **Python Community** - For the excellent libraries and tools
 
-## Acknowledgments
+## 📞 Support
 
-- **ReVanced Team**: For creating the excellent patching tools
-- **Python Community**: For the robust standard library
-- **Tkinter Developers**: For the cross-platform GUI toolkit
+- **Issues** - Report bugs and request features on GitHub Issues
+- **Discussions** - Join community discussions on GitHub Discussions
+- **Documentation** - Check the built-in help dialog for usage instructions
 
-## Support
+---
 
-If you encounter any issues:
-
-1. Check the troubleshooting section above
-2. Search for similar issues in the GitHub repository
-3. Create a new issue with:
-   - Your operating system
-   - Python version
-   - Steps to reproduce the problem
-   - Error messages from the log area
-
-## Version History
-
-- **v1.3.0** (Current)
-  - Enhanced drag & drop support with tkinterdnd2
-  - Added system monitoring with psutil integration
-  - Profile management system for saving/loading configurations
-  - Recent files functionality for quick access
-  - APK and patches file analysis tools
-  - Comprehensive keyboard shortcuts
-  - Auto-retry mechanism for failed operations
-  - Improved error handling and reporting
-  - System validation and resource monitoring
-  - Code optimization and dead code removal
-  - Advanced patch selection with search and filtering
-  - Patch management and configuration persistence
-
-- **v1.0.0** (Previous)
-  - Initial release
-  - Cross-platform GUI for ReVanced patching
-  - Automatic output naming with "-patched" suffix
-  - Real-time progress logging
-  - Basic error handling
-
+**Note:** This is an unofficial GUI wrapper. For official ReVanced tools and support, visit the [ReVanced GitHub organization](https://github.com/revanced).
