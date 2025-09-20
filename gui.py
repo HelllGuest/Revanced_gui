@@ -34,8 +34,8 @@ class ReVancedGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("ReVanced Patcher")
-        self.root.geometry("900x650")
-        self.root.minsize(800, 550)
+        self.root.geometry("1000x600")
+        self.root.minsize(900, 500)
         self.root.resizable(True, True)
         
         # Check dependencies before initializing
@@ -392,7 +392,7 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         main_frame.columnconfigure(1, weight=1)
         
-        # Status bar with settings
+        # Status bar with settings and buttons
         status_frame = ttk.Frame(main_frame)
         status_frame.grid(row=0, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 15))
         status_frame.columnconfigure(1, weight=1)  # Make middle column expandable
@@ -405,6 +405,15 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         ttk.Label(status_left, textvariable=self.system_status, foreground="blue").pack(side=tk.LEFT, padx=(5, 0))
         ttk.Label(status_left, text="Java:").pack(side=tk.LEFT, padx=(20, 0))
         ttk.Label(status_left, textvariable=self.java_version).pack(side=tk.LEFT, padx=(5, 0))
+        
+        # Middle - Action buttons
+        status_middle = ttk.Frame(status_frame)
+        status_middle.grid(row=0, column=1, sticky=tk.N)
+        
+        ttk.Button(status_middle, text="Patch APK", command=self.patch_apk).pack(side=tk.LEFT, padx=3)
+        ttk.Button(status_middle, text="Clear Log", command=self.clear_log).pack(side=tk.LEFT, padx=3)
+        ttk.Button(status_middle, text="Validate Setup", command=self.validate_system_requirements).pack(side=tk.LEFT, padx=3)
+        ttk.Button(status_middle, text="Exit", command=self.root.quit).pack(side=tk.LEFT, padx=3)
         
         # Right side - Settings
         status_right = ttk.Frame(status_frame)
@@ -493,14 +502,7 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
         self.progress_text.configure(yscrollcommand=scrollbar.set)
         
-        # Buttons frame
-        button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=9, column=0, columnspan=3, pady=20)
-        
-        ttk.Button(button_frame, text="Patch APK", command=self.patch_apk).pack(side=tk.LEFT, padx=8)
-        ttk.Button(button_frame, text="Clear Log", command=self.clear_log).pack(side=tk.LEFT, padx=8)
-        ttk.Button(button_frame, text="Validate Setup", command=self.validate_system_requirements).pack(side=tk.LEFT, padx=8)
-        ttk.Button(button_frame, text="Exit", command=self.root.quit).pack(side=tk.LEFT, padx=8)
+
         
         # Configure row weights for proper resizing
         main_frame.rowconfigure(8, weight=1)
