@@ -136,10 +136,17 @@ class ReVancedGUI:
                 ext = os.path.splitext(file_path)[1].lower()
                 if ext == '.jar':
                     self.cli_jar_path.set(file_path)
+                    # Save JAR path immediately
+                    if self.save_config_enabled:
+                        self.save_config()
                 elif ext == '.rvp':
                     self.patches_rvp_path.set(file_path)
+                    # Save RVP path immediately
+                    if self.save_config_enabled:
+                        self.save_config()
                 elif ext == '.apk':
                     self.apk_path.set(file_path)
+                    # APK will trigger update_output_filename automatically
                 self.log_message(f"Dropped file: {os.path.basename(file_path)}")
         except Exception as e:
             self.log_message(f"Drag & drop error: {e}")
@@ -208,9 +215,14 @@ class ReVancedGUI:
 1. Select ReVanced CLI JAR file (browse or drag & drop)
 2. Select patches RVP file (browse or drag & drop)
 3. Choose APK file to patch (browse or drag & drop)
-4. Select output directory and verify filename
+4. Output directory automatically set to APK's location
 5. Click 'Patch APK' to start the process
 6. Monitor progress in the log area
+
+AUTOMATIC FEATURES:
+• JAR and RVP paths are remembered between sessions
+• Output directory automatically matches APK file location
+• Output filename gets '-patched' suffix automatically
 
 SETTINGS:
 • Logs: Enable/disable saving logs to file
@@ -524,9 +536,14 @@ This software is provided under the MIT License. ReVanced is a community-driven 
                 if hasattr(self, 'config_var'):
                     self.config_var.set(self.save_config_enabled)
                 
+                # Always restore JAR and RVP paths from last session
                 self.cli_jar_path.set(str(config.get('last_cli_path', '')))
                 self.patches_rvp_path.set(str(config.get('last_patches_path', '')))
-                self.output_path.set(str(config.get('last_output_dir', '')))
+                
+                # Only restore output path if no APK is selected yet
+                # (APK selection will override this with APK's directory)
+                if not self.apk_path.get():
+                    self.output_path.set(str(config.get('last_output_dir', '')))
                 
                 geometry = config.get('window_geometry', '')
                 if geometry and re.match(r'\d+x\d+\+\d+\+\d+', geometry):
@@ -593,6 +610,7 @@ This software is provided under the MIT License. ReVanced is a community-driven 
         )
         if filename:
             self.cli_jar_path.set(filename)
+            # Always save JAR path for next session
             if self.save_config_enabled:
                 self.save_config()
     
@@ -603,6 +621,7 @@ This software is provided under the MIT License. ReVanced is a community-driven 
         )
         if filename:
             self.patches_rvp_path.set(filename)
+            # Always save RVP path for next session
             if self.save_config_enabled:
                 self.save_config()
     
@@ -613,8 +632,8 @@ This software is provided under the MIT License. ReVanced is a community-driven 
         )
         if filename:
             self.apk_path.set(filename)
-            if self.save_config_enabled:
-                self.save_config()
+            # APK selection will trigger update_output_filename which sets output directory
+            # and saves config automatically
     
     def browse_output(self):
         directory = filedialog.askdirectory(title="Select output directory")
@@ -626,9 +645,18 @@ This software is provided under the MIT License. ReVanced is a community-driven 
     def update_output_filename(self, *args):
         apk_path = self.apk_path.get()
         if apk_path:
+            # Set output directory to same as APK file directory
+            apk_dir = os.path.dirname(apk_path)
+            self.output_path.set(apk_dir)
+            
+            # Set output filename with -patched suffix
             base_name = os.path.basename(apk_path)
             name, ext = os.path.splitext(base_name)
             self.output_filename.set(f"{name}-patched{ext}")
+            
+            # Save config to remember the output directory change
+            if self.save_config_enabled:
+                self.save_config()
     
     def clear_log(self):
         self.progress_text.delete(1.0, tk.END)
