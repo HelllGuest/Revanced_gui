@@ -258,7 +258,6 @@ class ReVancedGUI:
         
         ttk.Button(status_middle, text="Patch APK", command=self.patch_apk).pack(side=tk.LEFT, padx=3)
         ttk.Button(status_middle, text="Clear Log", command=self.clear_log).pack(side=tk.LEFT, padx=3)
-        ttk.Button(status_middle, text="Validate Setup", command=self.validate_system_requirements).pack(side=tk.LEFT, padx=3)
         ttk.Button(status_middle, text="Exit", command=self.root.quit).pack(side=tk.LEFT, padx=3)
         
         # Right side - Settings
