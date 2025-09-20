@@ -4,7 +4,6 @@ import subprocess
 import threading
 import os
 import sys
-import platform
 import webbrowser
 import json
 from pathlib import Path
@@ -82,9 +81,6 @@ class ReVancedGUI:
         # Bind events for dynamic scaling
         self.root.bind('<Configure>', self.on_window_resize)
         
-        # Bind keyboard shortcuts
-        self.setup_keyboard_shortcuts()
-        
         # Setup drag & drop if available
         if DND_AVAILABLE:
             self.setup_drag_drop()
@@ -141,16 +137,15 @@ class ReVancedGUI:
         # Create File menu
         file_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Clear Log", command=self.clear_log, accelerator="Ctrl+L")
+        file_menu.add_command(label="Clear Log", command=self.clear_log)
         file_menu.add_separator()
-        file_menu.add_command(label="Export Log", command=self.export_log, accelerator="Ctrl+S")
+        file_menu.add_command(label="Export Log", command=self.export_log)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
+        file_menu.add_command(label="Exit", command=self.root.quit)
         
         # Create View menu
         view_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="View", menu=view_menu)
-        view_menu.add_command(label="System Info", command=self.show_system_info, accelerator="F1")
         view_menu.add_command(label="Analyze APK", command=self.analyze_apk)
         view_menu.add_command(label="Analyze Patches", command=self.analyze_patches_file)
         
@@ -164,15 +159,7 @@ class ReVancedGUI:
         help_menu.add_separator()
         help_menu.add_command(label="About", command=self.show_about)
         
-    def setup_keyboard_shortcuts(self):
-        """Setup keyboard shortcuts"""
-        self.root.bind('<Control-o>', lambda e: self.browse_apk())
-        self.root.bind('<Control-p>', lambda e: self.patch_apk())
-        self.root.bind('<Control-l>', lambda e: self.clear_log())
-        self.root.bind('<Control-s>', lambda e: self.export_log())
-        self.root.bind('<Control-q>', lambda e: self.root.quit())
-        self.root.bind('<F1>', lambda e: self.show_system_info())
-        self.root.bind('<F5>', lambda e: self.validate_system_requirements())
+
         
     def setup_drag_drop(self):
         """Enable drag and drop for file inputs"""
@@ -203,38 +190,9 @@ class ReVancedGUI:
         except Exception as e:
             self.log_message(f"Drag & drop error: {e}")
 
-    def get_system_details(self):
-        """Get detailed system information"""
-        details = {
-            "Application Version": __version__,
-            "Python Version": sys.version.split()[0],
-            "Platform": platform.platform(),
-            "Processor": platform.processor() or "Unknown",
-            "Java Version": self.java_version.get(),
-        }
-        
-        if PSUTIL_AVAILABLE:
-            details["RAM Available"] = f"{psutil.virtual_memory().available // (1024**3)} GB"
-            details["Disk Space"] = self.get_disk_space()
-            details["CPU Cores"] = psutil.cpu_count(logical=False)
-            details["Logical CPUs"] = psutil.cpu_count(logical=True)
-        else:
-            details["System Info"] = "psutil not available"
-            
-        details["Drag & Drop"] = "Available" if DND_AVAILABLE else "Not available"
-            
-        return details
+
     
-    def get_disk_space(self):
-        """Get available disk space"""
-        if not PSUTIL_AVAILABLE:
-            return "psutil not available"
-            
-        try:
-            free_gb, total_gb = self.get_disk_usage()
-            return f"{free_gb} GB free of {total_gb} GB"
-        except:
-            return "Unknown"
+
             
     def get_disk_usage(self, path=None):
         """Get disk usage for specific path, cross-platform compatible"""
@@ -259,40 +217,7 @@ class ReVancedGUI:
             self.log_message(f"Warning: Could not check disk usage: {e}")
             return 0, 0
 
-    def show_system_info(self):
-        """Display system information dialog"""
-        info_window = tk.Toplevel(self.root)
-        info_window.title("System Information")
-        info_window.geometry("550x450")
-        info_window.resizable(False, False)
-        info_window.transient(self.root)
-        info_window.grab_set()
 
-        # Center the window
-        info_window.update_idletasks()
-        x = self.root.winfo_x() + (self.root.winfo_width() - info_window.winfo_width()) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - info_window.winfo_height()) // 2
-        info_window.geometry(f"+{x}+{y}")
-
-        # System info content
-        info_frame = ttk.Frame(info_window, padding="20")
-        info_frame.pack(fill=tk.BOTH, expand=True)
-
-        ttk.Label(info_frame, text="System Information", font=("Arial", 16, "bold")).pack(pady=(0, 15))
-
-        # System details
-        details = self.get_system_details()
-
-        text_widget = tk.Text(info_frame, wrap=tk.WORD, font=("Consolas", 10), height=18)
-        text_widget.pack(fill=tk.BOTH, expand=True, pady=5)
-
-        for key, value in details.items():
-            text_widget.insert(tk.END, f"{key:<25}: {value}\n")
-
-        text_widget.config(state=tk.DISABLED)
-
-        # Close button
-        ttk.Button(info_frame, text="Close", command=info_window.destroy).pack(pady=(15, 0))
     
 
 
@@ -423,13 +348,8 @@ USAGE INSTRUCTIONS:
 5. Click 'Patch APK' to start the process
 6. Monitor progress in the log area
 
-KEYBOARD SHORTCUTS:
-• Ctrl+O - Open APK file
-• Ctrl+P - Start patching
-• Ctrl+L - Clear log
-• Ctrl+S - Export log
-• F1 - System Information
-• F5 - Validate system
+Use the menu bar to access additional features like APK analysis,
+log export, and application settings.
 """
         usage_text.insert(tk.END, usage_content)
         usage_text.config(state=tk.DISABLED)
@@ -568,7 +488,6 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             command=self.update_preferences
         )
         logs_check.pack(side=tk.LEFT, padx=(0, 10))
-        self.create_tooltip(logs_check, "Save application logs to 'logs' folder in script directory")
         
         # Save config checkbox (compact)
         config_check = ttk.Checkbutton(
@@ -578,7 +497,6 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             command=self.update_preferences
         )
         config_check.pack(side=tk.LEFT, padx=(0, 10))
-        self.create_tooltip(config_check, "Remember window size, file paths, and settings between sessions")
         
         # Settings info button (small)
         info_button = ttk.Button(
@@ -588,28 +506,24 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             width=3
         )
         info_button.pack(side=tk.LEFT)
-        self.create_tooltip(info_button, "Show detailed settings information")
         
         # CLI JAR file selection
         ttk.Label(main_frame, text="ReVanced CLI JAR:").grid(row=2, column=0, sticky=tk.W, pady=8)
         self.cli_entry = ttk.Entry(main_frame, textvariable=self.cli_jar_path)
         self.cli_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         ttk.Button(main_frame, text="Browse", command=self.browse_cli_jar).grid(row=2, column=2, padx=5, pady=8)
-        self.create_tooltip(self.cli_entry, "Select the ReVanced CLI JAR file")
         
         # Patches file selection
         ttk.Label(main_frame, text="Patches RVP:").grid(row=3, column=0, sticky=tk.W, pady=8)
         self.patches_entry = ttk.Entry(main_frame, textvariable=self.patches_rvp_path)
         self.patches_entry.grid(row=3, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         ttk.Button(main_frame, text="Browse", command=self.browse_patches).grid(row=3, column=2, padx=5, pady=8)
-        self.create_tooltip(self.patches_entry, "Select the ReVanced patches RVP file")
         
         # APK file selection
         ttk.Label(main_frame, text="APK File:").grid(row=4, column=0, sticky=tk.W, pady=8)
         self.apk_entry = ttk.Entry(main_frame, textvariable=self.apk_path)
         self.apk_entry.grid(row=4, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         ttk.Button(main_frame, text="Browse", command=self.browse_apk).grid(row=4, column=2, padx=5, pady=8)
-        self.create_tooltip(self.apk_entry, "Select the APK file to patch")
         # Bind the APK path change to update output filename
         self.apk_path.trace_add('write', self.update_output_filename)
         
@@ -618,13 +532,11 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         output_entry = ttk.Entry(main_frame, textvariable=self.output_path)
         output_entry.grid(row=5, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
         ttk.Button(main_frame, text="Browse", command=self.browse_output).grid(row=5, column=2, padx=5, pady=8)
-        self.create_tooltip(output_entry, "Select where to save the patched APK")
         
         # Output filename
         ttk.Label(main_frame, text="Output Filename:").grid(row=6, column=0, sticky=tk.W, pady=8)
         self.output_filename_entry = ttk.Entry(main_frame, textvariable=self.output_filename)
         self.output_filename_entry.grid(row=6, column=1, sticky=(tk.W, tk.E), padx=5, pady=8)
-        self.create_tooltip(self.output_filename_entry, "Automatically generated with '-patched' suffix")
         
         # Progress area
         ttk.Label(main_frame, text="Progress:").grid(row=7, column=0, sticky=tk.W, pady=(20, 5))
@@ -669,27 +581,7 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         # Load saved configuration
         self.load_config()
         
-    def create_tooltip(self, widget, text):
-        """Simple tooltip implementation"""
-        def on_enter(event):
-            # Only show tooltip if there's enough text to warrant it
-            if len(text) > 20:
-                x, y = widget.winfo_rootx() + 20, widget.winfo_rooty() + 20
-                tooltip = tk.Toplevel()
-                tooltip.wm_overrideredirect(True)
-                tooltip.wm_geometry(f"+{x}+{y}")
-                label = tk.Label(tooltip, text=text, background="lightyellow", 
-                                relief="solid", borderwidth=1, font=("Arial", 9), justify=tk.LEFT)
-                label.pack()
-                widget.tooltip = tooltip
-        
-        def on_leave(event):
-            if hasattr(widget, 'tooltip'):
-                widget.tooltip.destroy()
-                del widget.tooltip
-        
-        widget.bind("<Enter>", on_enter)
-        widget.bind("<Leave>", on_leave)
+
         
     def on_window_resize(self, event):
         # Adjust font sizes based on window dimensions
