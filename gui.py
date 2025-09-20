@@ -10,7 +10,6 @@ from pathlib import Path
 import re
 import logging
 from datetime import datetime
-import zipfile
 import time
 
 # Version information
@@ -143,11 +142,7 @@ class ReVancedGUI:
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
         
-        # Create View menu
-        view_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="View", menu=view_menu)
-        view_menu.add_command(label="Analyze APK", command=self.analyze_apk)
-        view_menu.add_command(label="Analyze Patches", command=self.analyze_patches_file)
+
         
 
         
@@ -348,8 +343,7 @@ USAGE INSTRUCTIONS:
 5. Click 'Patch APK' to start the process
 6. Monitor progress in the log area
 
-Use the menu bar to access additional features like APK analysis,
-log export, and application settings.
+Use the menu bar to access log export and application settings.
 """
         usage_text.insert(tk.END, usage_content)
         usage_text.config(state=tk.DISABLED)
@@ -372,7 +366,6 @@ COMMON ISSUES:
 
 VALIDATION CHECKS:
 • Use 'Validate Setup' to check system readiness
-• Analyze APK files before patching
 • Check disk space (2GB+ recommended)
 
 For more help, visit: https://github.com/revanced/revanced-documentation
@@ -772,132 +765,17 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         thread = threading.Thread(target=monitor, daemon=True)
         thread.start()
         
-    def validate_apk_file(self, apk_path):
-        """Validate APK file integrity"""
-        try:
-            # Check if it's a valid ZIP (APK is a ZIP file)
-            with zipfile.ZipFile(apk_path, 'r') as apk:
-                # Check for essential APK components
-                files = apk.namelist()
-                if 'AndroidManifest.xml' not in files:
-                    return False, "Invalid APK: missing AndroidManifest.xml"
-            
-            # Check file size (warn if unusually large)
-            size_mb = os.path.getsize(apk_path) / (1024 * 1024)
-            if size_mb > 500:  # > 500MB seems unusual
-                self.log_message(f"Warning: Large APK file ({size_mb:.1f} MB)")
-            
-            return True, "Valid APK file"
-            
-        except zipfile.BadZipFile:
-            return False, "Corrupted APK file"
-        except Exception as e:
-            return False, f"APK validation error: {str(e)}"
 
-    def validate_jar_file(self, jar_path):
-        """Validate JAR file integrity"""
-        try:
-            with zipfile.ZipFile(jar_path, 'r') as jar:
-                # Check for manifest
-                if 'META-INF/MANIFEST.MF' not in jar.namelist():
-                    return False, "Invalid JAR: missing manifest"
-            return True, "Valid JAR file"
-        except zipfile.BadZipFile:
-            return False, "Corrupted JAR file"
-        except Exception as e:
-            return False, f"JAR validation error: {str(e)}"
+
+
             
-    def analyze_apk(self):
-        """Analyze APK and show detailed information"""
-        apk_path = self.apk_path.get()
-        if not apk_path or not os.path.exists(apk_path):
-            messagebox.showerror("Error", "Please select a valid APK file first")
-            return
-        
-        try:
-            # Quick analysis for large files
-            size_mb = os.path.getsize(apk_path) / (1024 * 1024)
-            if size_mb > 100:
-                analysis = self.quick_apk_analysis(apk_path)
-            else:
-                analysis = self.full_apk_analysis(apk_path)
+
             
-            # Show analysis window
-            analysis_window = tk.Toplevel(self.root)
-            analysis_window.title("APK Analysis")
-            analysis_window.geometry("600x400")
+
             
-            text_widget = tk.Text(analysis_window, wrap=tk.WORD, font=("Consolas", 10))
-            text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
             
-            for key, value in analysis.items():
-                text_widget.insert(tk.END, f"{key}: {value}\n")
-            
-            text_widget.config(state=tk.DISABLED)
-            
-        except Exception as e:
-            messagebox.showerror("Analysis Error", f"Failed to analyze APK: {str(e)}")
-            
-    def quick_apk_analysis(self, apk_path):
-        """Quick analysis for large APK files"""
-        size_mb = os.path.getsize(apk_path) / (1024 * 1024)
-        return {
-            "File Size": f"{size_mb:.1f} MB",
-            "Analysis": "Quick analysis (large file)",
-            "Status": "Ready for patching"
-        }
-            
-    def full_apk_analysis(self, apk_path):
-        """Full analysis for APK files"""
-        with zipfile.ZipFile(apk_path, 'r') as apk:
-            files = apk.namelist()
-            size_mb = os.path.getsize(apk_path) / (1024 * 1024)
-            
-            # Count different file types
-            dex_files = [f for f in files if f.endswith('.dex')]
-            so_files = [f for f in files if f.endswith('.so')]
-            
-            return {
-                "File Size": f"{size_mb:.1f} MB",
-                "Total Files": len(files),
-                "DEX Files": len(dex_files),
-                "Native Libraries": len(so_files),
-                "Has Manifest": "AndroidManifest.xml" in files,
-                "Analysis": "Complete",
-                "Status": "Ready for patching"
-            }
-            
-    def analyze_patches_file(self):
-        """Analyze patches file"""
-        patches_path = self.patches_rvp_path.get()
-        if not patches_path or not os.path.exists(patches_path):
-            messagebox.showerror("Error", "Please select a valid patches file first")
-            return
-        
-        try:
-            size_mb = os.path.getsize(patches_path) / (1024 * 1024)
-            
-            analysis = {
-                "File Size": f"{size_mb:.1f} MB",
-                "File Type": "ReVanced Patches",
-                "Status": "Ready for use"
-            }
-            
-            # Show analysis window
-            analysis_window = tk.Toplevel(self.root)
-            analysis_window.title("Patches Analysis")
-            analysis_window.geometry("400x200")
-            
-            text_widget = tk.Text(analysis_window, wrap=tk.WORD, font=("Consolas", 10))
-            text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-            
-            for key, value in analysis.items():
-                text_widget.insert(tk.END, f"{key}: {value}\n")
-            
-            text_widget.config(state=tk.DISABLED)
-            
-        except Exception as e:
-            messagebox.showerror("Analysis Error", f"Failed to analyze patches: {str(e)}")
+
         
     def browse_cli_jar(self):
         filename = filedialog.askopenfilename(
@@ -981,22 +859,12 @@ For more help, visit: https://github.com/revanced/revanced-documentation
         # Check files exist
         if not self.cli_jar_path.get() or not os.path.exists(self.cli_jar_path.get()):
             errors.append(('file_not_found', "ReVanced CLI JAR file not found"))
-        else:
-            # Validate JAR file
-            jar_ok, jar_msg = self.validate_jar_file(self.cli_jar_path.get())
-            if not jar_ok:
-                errors.append(('corrupted_apk', f"CLI JAR: {jar_msg}"))
         
         if not self.patches_rvp_path.get() or not os.path.exists(self.patches_rvp_path.get()):
             errors.append(('file_not_found', "Patches RVP file not found"))
         
         if not self.apk_path.get() or not os.path.exists(self.apk_path.get()):
             errors.append(('file_not_found', "APK file not found"))
-        else:
-            # Validate APK file
-            apk_ok, apk_msg = self.validate_apk_file(self.apk_path.get())
-            if not apk_ok:
-                errors.append(('corrupted_apk', f"APK: {apk_msg}"))
         
         if not self.output_path.get() or not os.path.exists(self.output_path.get()):
             errors.append(('file_not_found', "Output directory not found"))
