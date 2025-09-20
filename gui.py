@@ -1,10 +1,9 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, simpledialog
+from tkinter import ttk, filedialog, messagebox
 import subprocess
 import threading
 import os
 import sys
-import webbrowser
 import json
 from pathlib import Path
 import re
@@ -146,13 +145,7 @@ class ReVancedGUI:
         
 
         
-        # Create Help menu
-        help_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="Documentation", command=self.show_documentation)
-        help_menu.add_command(label="Help Contents", command=self.show_help_dialog)
-        help_menu.add_separator()
-        help_menu.add_command(label="About", command=self.show_about)
+
         
 
         
@@ -229,158 +222,11 @@ class ReVancedGUI:
 
 
 
-    def show_documentation(self):
-        """Open documentation in browser"""
-        webbrowser.open("https://github.com/revanced/revanced-documentation")  
   
-    def show_help_dialog(self):
-        """Show comprehensive help dialog"""
-        help_window = tk.Toplevel(self.root)
-        help_window.title("ReVanced GUI Help")
-        help_window.geometry("700x550")
-        help_window.resizable(True, True)
-        
-        # Center the window
-        help_window.update_idletasks()
-        x = self.root.winfo_x() + (self.root.winfo_width() - help_window.winfo_width()) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - help_window.winfo_height()) // 2
-        help_window.geometry(f"+{x}+{y}")
-        
-        # Create notebook for tabs
-        notebook = ttk.Notebook(help_window)
-        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Requirements tab
-        req_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(req_frame, text="Requirements")
-        
-        req_text = tk.Text(req_frame, wrap=tk.WORD, font=("Arial", 10))
-        req_text.pack(fill=tk.BOTH, expand=True)
-        
-        req_content = """
-REQUIREMENTS:
+  
 
-• Java 8+ (Java 11+ recommended for best compatibility)
-• ReVanced CLI JAR file (download from GitHub releases)
-• ReVanced patches RVP file (download from GitHub releases)
-• APK file to patch (original app from trusted source)
-
-Ensure all files are from official ReVanced sources to avoid security issues.
-"""
-        req_text.insert(tk.END, req_content)
-        req_text.config(state=tk.DISABLED)
-        
-        # Usage tab
-        usage_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(usage_frame, text="Usage")
-        
-        usage_text = tk.Text(usage_frame, wrap=tk.WORD, font=("Arial", 10))
-        usage_text.pack(fill=tk.BOTH, expand=True)
-        
-        usage_content = """
-USAGE INSTRUCTIONS:
-
-1. Select ReVanced CLI JAR file (browse or drag & drop)
-2. Select patches RVP file (browse or drag & drop)
-3. Choose APK file to patch (browse or drag & drop)
-4. Select output directory and verify filename
-5. Click 'Patch APK' to start the process
-6. Monitor progress in the log area
-
-Use the menu bar to access log export and application settings.
-"""
-        usage_text.insert(tk.END, usage_content)
-        usage_text.config(state=tk.DISABLED)
-        
-        # Troubleshooting tab
-        trouble_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(trouble_frame, text="Troubleshooting")
-        
-        trouble_text = tk.Text(trouble_frame, wrap=tk.WORD, font=("Arial", 10))
-        trouble_text.pack(fill=tk.BOTH, expand=True)
-        
-        trouble_content = """
-TROUBLESHOOTING:
-
-COMMON ISSUES:
-• Java not found: Install Java and ensure it's in PATH
-• File not found: Check file paths and permissions
-• Patching failed: Ensure APK version matches patches
-• Out of memory: Close other applications or use smaller APK
-
-VALIDATION CHECKS:
-• Use 'Validate Setup' to check system readiness
-• Check disk space (2GB+ recommended)
-
-For more help, visit: https://github.com/revanced/revanced-documentation
-"""
-        trouble_text.insert(tk.END, trouble_content)
-        trouble_text.config(state=tk.DISABLED)
-        
-        # Close button
-        ttk.Button(help_window, text="Close", command=help_window.destroy).pack(pady=10)
     
-    def show_about(self):
-        about_window = tk.Toplevel(self.root)
-        about_window.title("About ReVanced Patcher")
-        about_window.geometry("500x350")
-        about_window.resizable(False, False)
-        about_window.transient(self.root)
-        about_window.grab_set()
-        
-        # Center the about window
-        about_window.update_idletasks()
-        x = self.root.winfo_x() + (self.root.winfo_width() - about_window.winfo_width()) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - about_window.winfo_height()) // 2
-        about_window.geometry(f"+{x}+{y}")
-        
-        # About content
-        about_frame = ttk.Frame(about_window, padding="20")
-        about_frame.pack(fill=tk.BOTH, expand=True)
-        
-        ttk.Label(about_frame, text="ReVanced Patcher GUI", font=("Arial", 16, "bold")).pack(pady=(0, 15))
-        
-        # Version info
-        version_frame = ttk.Frame(about_frame)
-        version_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(version_frame, text="Version:", font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-        ttk.Label(version_frame, text=f"v{__version__}", font=("Arial", 10)).pack(side=tk.LEFT, padx=(5, 0))
-        
-        # Author info
-        author_frame = ttk.Frame(about_frame)
-        author_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(author_frame, text="Author:", font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-        ttk.Label(author_frame, text=__author__, font=("Arial", 10)).pack(side=tk.LEFT, padx=(5, 0))
-        
-        # License info
-        license_frame = ttk.Frame(about_frame)
-        license_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(license_frame, text="License:", font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-        ttk.Label(license_frame, text=__license__, font=("Arial", 10)).pack(side=tk.LEFT, padx=(5, 0))
-        
-        # GitHub link
-        github_frame = ttk.Frame(about_frame)
-        github_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(github_frame, text="GitHub:", font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-        github_link = ttk.Label(github_frame, text="https://github.com/revanced", font=("Arial", 10), foreground="blue", cursor="hand2")
-        github_link.pack(side=tk.LEFT, padx=(5, 0))
-        github_link.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/revanced"))
-        
-        # Description
-        desc_text = tk.Text(about_frame, height=10, wrap=tk.WORD, font=("Arial", 9), relief=tk.FLAT)
-        desc_text.pack(fill=tk.BOTH, expand=True, pady=(15, 0))
-        desc_text.insert(tk.END, 
-            "This is a GUI wrapper for the ReVanced CLI tool. It provides an easy-to-use interface \n"
-            "for patching APK files with ReVanced patches.\n\n"
-            "This software is provided under the MIT License, which permits modification and \n"
-            "redistribution under certain conditions. See the LICENSE file for details.\n\n"
-            "ReVanced is a community-driven project that provides tools for customizing \n"
-            "and enhancing Android applications."
-        )
-        desc_text.config(state=tk.DISABLED)
-        
-        # Close button
-        ttk.Button(about_frame, text="Close", command=about_window.destroy).pack(pady=(15, 0))
+
         
     def setup_ui(self):
         # Configure grid weights for dynamic scaling
@@ -831,7 +677,7 @@ For more help, visit: https://github.com/revanced/revanced-documentation
             'unknown': "Check the log for detailed error information"
         }
         
-        solution = error_solutions.get(error_type, "Check the documentation for troubleshooting steps")
+        solution = error_solutions.get(error_type, "Check the log output for detailed error information")
         error_msg = f"Error: {details}\nSolution: {solution}"
         
         self.log_message(error_msg)
